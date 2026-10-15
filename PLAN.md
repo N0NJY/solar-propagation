@@ -10,7 +10,10 @@ what you can reach, and a world map. Python, Flet UI. Linux first, Android secon
       Map tab done (coastlines, day/night shading, sun point, targets coloured per band,
       tap a place for all bands to it, great-circle path). Interactions confirmed working by user.
       Heat map layer added (world reach grid per band, Places/Heat map toggle).
-      Next: 24-hour band-open strip, alerts banner, Linux packaging.
+      Space Wx page added (NOAA scales, solar wind + Bz chart, X-ray chart, flare odds, Kp bars,
+      CME note + live LASCO/Enlil images, alerts, forecast discussion). NASA DONKI is currently
+      unavailable (API redirects), so CMEs come from NOAA's discussion + imagery.
+      Next: PSK Reporter 'heard recently' layer with mode filters; 24-hour band-open strip, alerts banner, Linux packaging.
       Run: `.venv/bin/python -m app.main` (`HFPROP_TAB=1` opens on a given tab).
 
 ## Phase 1 - Linux desktop app (Flet)

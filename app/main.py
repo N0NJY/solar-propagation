@@ -6,6 +6,7 @@ from datetime import datetime, timezone, timedelta
 import flet as ft
 
 from hfprop import geo, predict, settings as cfg, spaceweather
+from app import spacewx
 from app.mapview import MapView, STATE_FILL
 
 STATE_COLOR = {"GO": ft.Colors.GREEN_600, "MARGINAL": ft.Colors.AMBER_700, "NO-GO": ft.Colors.RED_600}
@@ -263,22 +264,31 @@ async def main(page: ft.Page):
         band_chips, ft.Row([map_when, layers], alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                             wrap=True), ft.Row([mapview.control], alignment=ft.MainAxisAlignment.CENTER), legend, legend_note, target_title, target_row])
 
-    views = [home, bands_view, map_view, settings_view]
+    swx_view, swx_refresh, swx_maybe = spacewx.build(page)
+    views = [home, bands_view, map_view, swx_view, settings_view]
     start = int(os.environ.get("HFPROP_TAB", "0"))   # developer aid: open on a given tab
     body = ft.Container(content=views[start], padding=16, expand=True)
 
     def nav_change(e):
         body.content = views[e.control.selected_index]
         page.update()
+        if e.control.selected_index == 3:
+            page.run_task(swx_maybe)
 
     page.navigation_bar = ft.NavigationBar(selected_index=start, on_change=nav_change, destinations=[
         ft.NavigationBarDestination(icon=ft.Icons.HOME, label="Home"),
         ft.NavigationBarDestination(icon=ft.Icons.SIGNAL_CELLULAR_ALT, label="Bands"),
         ft.NavigationBarDestination(icon=ft.Icons.PUBLIC, label="Map"),
+        ft.NavigationBarDestination(icon=ft.Icons.WB_SUNNY, label="Space Wx"),
         ft.NavigationBarDestination(icon=ft.Icons.TUNE, label="Settings")])
     page.add(ft.SafeArea(expand=True, content=body))
 
     fit_map()
+    if start == 3:
+        await swx_maybe()
+        if os.environ.get("HFPROP_SCROLL"):      # developer aid for screenshots
+            await asyncio.sleep(2)
+            await swx_view.scroll_to(offset=int(os.environ["HFPROP_SCROLL"]), duration=0)
     if s.has_location:
         await recompute()
 
