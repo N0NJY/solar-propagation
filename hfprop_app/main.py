@@ -1,6 +1,7 @@
 """Flet front end for hfprop.  Run:  hfprop-app   (or: python -m hfprop_app)"""
 import asyncio
 import os
+import re
 from datetime import datetime, timezone, timedelta
 
 import flet as ft
@@ -290,7 +291,10 @@ async def main(page: ft.Page):
         build_bands()
         update_map()
         if s.has_location:
-            loc_text.value = f"{s.label}   ({s.lat:.2f}, {s.lon:.2f})   grid {geo.latlon_to_grid(s.lat, s.lon)}"
+            if re.fullmatch(geo.GRID_RE, s.label):             # typed a grid: show it exactly as entered
+                loc_text.value = f"Grid {s.label}   ({s.lat:.4f}, {s.lon:.4f})"
+            else:
+                loc_text.value = f"{s.label}   ({s.lat:.4f}, {s.lon:.4f})   grid {geo.latlon_to_grid(s.lat, s.lon)}"
             when = datetime.now(timezone.utc) + timedelta(hours=app["offset"])
             bands_header.value = f"{loc_text.value}\nPredicted for {when:%Y-%m-%d %H:%M} UTC"
         page.update()

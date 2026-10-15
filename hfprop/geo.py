@@ -39,31 +39,49 @@ def intermediate(lat1, lon1, lat2, lon2, f):
             math.degrees(math.atan2(y, x)))
 
 
+# 4 chars FN31, 6 FN31pr, 8 FN31pr47, 10 FN31pr47ab (each step ~ 2 / 12 / 10 / 24 times finer)
+GRID_RE = r"[A-Ra-r]{2}\d\d(?:[A-Xa-x]{2}(?:\d\d(?:[A-Xa-x]{2})?)?)?"
+
+
 def latlon_to_grid(lat, lon, chars=6):
-    lon += 180.0
-    lat += 90.0
-    out = chr(ord("A") + int(lon // 20)) + chr(ord("A") + int(lat // 10))
+    lon = min(max(lon + 180.0, 0.0), 359.9999999)
+    lat = min(max(lat + 90.0, 0.0), 179.9999999)
+    out = chr(65 + int(lon // 20)) + chr(65 + int(lat // 10))
     out += str(int((lon % 20) // 2)) + str(int(lat % 10))
+    lo, la = lon % 2, lat % 1                      # inside the 2 x 1 degree square
     if chars >= 6:
-        out += chr(ord("a") + int((lon % 2) * 12)) + chr(ord("a") + int((lat % 1) * 24))
+        out += chr(97 + int(lo * 12)) + chr(97 + int(la * 24))
+        lo, la = lo * 12 % 1, la * 24 % 1          # inside the sub-square (fractions 0..1)
+    if chars >= 8:
+        out += str(int(lo * 10)) + str(int(la * 10))
+        lo, la = lo * 10 % 1, la * 10 % 1
+    if chars >= 10:
+        out += chr(97 + int(lo * 24)) + chr(97 + int(la * 24))
     return out
 
 
 def grid_to_latlon(grid):
-    """Centre of a 4- or 6-character Maidenhead square."""
+    """Centre of a 4-, 6-, 8- or 10-character Maidenhead square."""
     g = grid.strip()
-    if not re.fullmatch(r"[A-Ra-r]{2}\d\d([A-Xa-x]{2})?", g):
+    if not re.fullmatch(GRID_RE, g):
         raise ValueError(f"bad grid square: {grid!r}")
     g = g.upper()
-    lon = (ord(g[0]) - 65) * 20 - 180 + int(g[2]) * 2
-    lat = (ord(g[1]) - 65) * 10 - 90 + int(g[3])
+    lon = (ord(g[0]) - 65) * 20 - 180 + int(g[2]) * 2.0
+    lat = (ord(g[1]) - 65) * 10 - 90 + int(g[3]) * 1.0
+    w, h = 2.0, 1.0                                # size of the current square in degrees
     if len(g) >= 6:
-        lon += (ord(g[4]) - 65) / 12 + 1 / 24
-        lat += (ord(g[5]) - 65) / 24 + 1 / 48
-    else:
-        lon += 1.0
-        lat += 0.5
-    return lat, lon
+        w, h = w / 24, h / 24
+        lon += (ord(g[4]) - 65) * w
+        lat += (ord(g[5]) - 65) * h
+    if len(g) >= 8:
+        w, h = w / 10, h / 10
+        lon += int(g[6]) * w
+        lat += int(g[7]) * h
+    if len(g) >= 10:
+        w, h = w / 24, h / 24
+        lon += (ord(g[8]) - 65) * w
+        lat += (ord(g[9]) - 65) * h
+    return lat + h / 2, lon + w / 2
 
 
 def zip_to_latlon(zipcode):
@@ -85,14 +103,14 @@ def zip_to_latlon(zipcode):
 
 
 def parse_location(text):
-    """Accept 'FN31', 'FN31pr', '90210', '40.7,-74.0'. Returns (lat, lon, label)."""
+    """Accept 'FN31', 'FN31pr', 'FN31pr47ab', '90210', '40.7,-74.0'. Returns (lat, lon, label)."""
     t = text.strip()
     if re.fullmatch(r"\d{5}(-\d{4})?", t):
         lat, lon, name = zip_to_latlon(t)
         return lat, lon, name
-    if re.fullmatch(r"[A-Ra-r]{2}\d\d([A-Xa-x]{2})?", t):
+    if re.fullmatch(GRID_RE, t):
         lat, lon = grid_to_latlon(t)
-        return lat, lon, t.upper()[:4] + t[4:].lower()
+        return lat, lon, t[:2].upper() + t[2:4] + t[4:].lower()
     m = re.fullmatch(r"\s*(-?\d+(?:\.\d+)?)\s*[, ]\s*(-?\d+(?:\.\d+)?)\s*", t)
     if m:
         lat, lon = float(m.group(1)), float(m.group(2))

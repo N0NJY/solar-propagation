@@ -98,3 +98,11 @@ def test_day_strip_shape_and_diurnal_pattern():
     assert ten[17] != predict.NOGO and ten[5] == predict.NOGO
     eighty = strip["80m"]         # low band: night opens, midday shut for long range
     assert eighty[6] != predict.NOGO
+
+
+def test_extended_grid_squares():
+    lat, lon, label = geo.parse_location("FN31PR47AB")
+    assert label == "FN31pr47ab"
+    assert abs(lat - 41.7292) < 1e-3 and abs(lon + 72.7083) < 1e-3
+    for g in ("FN31", "FN31pr", "FN31pr47", "FN31pr47ab"):
+        assert geo.latlon_to_grid(*geo.grid_to_latlon(g), chars=len(g)) == g

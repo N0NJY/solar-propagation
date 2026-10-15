@@ -9,6 +9,7 @@ import flet as ft
 import flet.canvas as cv
 
 from hfprop import mapdata, units as U
+from hfprop.geo import latlon_to_grid
 from hfprop.solar import subsolar_point
 from hfprop.targets import TARGETS
 
@@ -459,7 +460,8 @@ class MapView:
             px, py = X(self.me[1]), Y(self.me[0])
             shapes.append(cv.Circle(px, py, r + 2, _fill("#d6246e")))
             shapes.append(cv.Circle(px, py, r + 2, _stroke("#ffffff", 2.0)))
-            shapes.append(cv.Text(px + r + 5, py - 7, "You", ft.TextStyle(size=12, weight=ft.FontWeight.BOLD,
+            you = "You" if z < 6 else f"You  {latlon_to_grid(self.me[0], self.me[1], 6 if z < 16 else 10)}"
+            shapes.append(cv.Text(px + r + 5, py - 7, you, ft.TextStyle(size=12, weight=ft.FontWeight.BOLD,
                                                                        color="#7d0f3e")))
         shapes += self._legend()
         shapes += self._scale_bar()
