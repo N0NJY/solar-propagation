@@ -15,6 +15,7 @@ class Settings:
     power_w: float = 100.0
     noise: str = "residential"   # quiet | residential | city
     gain_dbi: float = 0.0
+    callsign: str = ""          # optional; enables PSK Reporter 'heard recently'
 
     @property
     def has_location(self):

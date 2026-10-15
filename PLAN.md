@@ -13,7 +13,11 @@ what you can reach, and a world map. Python, Flet UI. Linux first, Android secon
       Space Wx page added (NOAA scales, solar wind + Bz chart, X-ray chart, flare odds, Kp bars,
       CME note + live LASCO/Enlil images, alerts, forecast discussion). NASA DONKI is currently
       unavailable (API redirects), so CMEs come from NOAA's discussion + imagery.
-      Next: PSK Reporter 'heard recently' layer with mode filters; 24-hour band-open strip, alerts banner, Linux packaging.
+      PSK Reporter 'Heard' layer added: real reports (they heard me / I heard them) as squares
+      on the map, filters for window/direction/mode/band, station list, and a 'prediction check'
+      comparing the model with real reports. Needs the user's callsign (Settings or the panel).
+      One PSK request per 5 min (cached); filtering is local.
+      Next: 24-hour band-open strip, alerts banner, Linux packaging.
       Run: `.venv/bin/python -m app.main` (`HFPROP_TAB=1` opens on a given tab).
 
 ## Phase 1 - Linux desktop app (Flet)

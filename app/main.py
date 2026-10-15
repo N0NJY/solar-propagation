@@ -7,6 +7,7 @@ import flet as ft
 
 from hfprop import geo, predict, settings as cfg, spaceweather
 from app import spacewx
+from app.heard import Heard
 from app.mapview import MapView, STATE_FILL
 
 STATE_COLOR = {"GO": ft.Colors.GREEN_600, "MARGINAL": ft.Colors.AMBER_700, "NO-GO": ft.Colors.RED_600}
@@ -41,6 +42,8 @@ async def main(page: ft.Page):
     page.theme_mode = ft.ThemeMode.SYSTEM
     page.padding = 0
     s = cfg.load()
+    if os.environ.get("HFPROP_CALL"):                 # developer aid
+        s.callsign = os.environ["HFPROP_CALL"].upper()
     app = {"sw": None, "rows": None, "offset": 0, "band": "20m", "target": None}
 
     where = ft.TextField(label="Zip code, grid square (FN31), or lat,lon", value=s.where,
@@ -103,7 +106,12 @@ async def main(page: ft.Page):
         update_map()
         page.update()
 
-    mapview = MapView(on_pick=pick_target)
+    def heard_redraw():
+        update_map()
+        page.update()
+
+    heard = Heard(page, lambda: s, lambda: {"band": app["band"], "sw": app["sw"]}, cfg.save, heard_redraw)
+    mapview = MapView(on_pick=pick_target, on_pick_station=heard.pick)
 
     def fit_map(e=None):
         """Size the 2:1 map to fit the window so the whole map and its legend are visible."""
@@ -120,15 +128,21 @@ async def main(page: ft.Page):
     def layers_change(e):
         sel = set(e.control.selected)
         mapview.show_dots, mapview.show_heat = "places" in sel, "heat" in sel
-        mapview.draw()
+        mapview.show_heard = heard.enabled = "heard" in sel
+        update_map()
         target_title.visible = mapview.show_dots
         target_row.visible = mapview.show_dots
         page.update()
+        if heard.enabled:
+            page.run_task(heard.maybe_refresh)
 
-    layers = ft.SegmentedButton(selected=["places", "heat"], allow_multiple_selection=True,
+    heard.enabled = mapview.show_heard = bool(s.callsign)
+    layers = ft.SegmentedButton(selected=["places", "heat"] + (["heard"] if s.callsign else []),
+                                allow_multiple_selection=True,
                                 allow_empty_selection=True, on_change=layers_change,
                                 segments=[ft.Segment(value="places", label=ft.Text("Places")),
-                                          ft.Segment(value="heat", label=ft.Text("Heat map"))])
+                                          ft.Segment(value="heat", label=ft.Text("Heat map")),
+                                          ft.Segment(value="heard", label=ft.Text("Heard"))])
 
     def pick_band(name):
         app["band"] = name
@@ -149,7 +163,9 @@ async def main(page: ft.Page):
         map_when.value = f'{app["band"]} - {row["overall"]} - {when:%Y-%m-%d %H:%M} UTC'
         freq = dict(predict.BANDS)[app["band"]]
         heat = predict.reach_grid(s.lat, s.lon, freq, when, app["sw"], s.station(), mapview.heat_step)
-        mapview.set_data((s.lat, s.lon, s.label), when, states, app["target"], heat)
+        mapview.set_data((s.lat, s.lon, s.label), when, states, app["target"], heat,
+                         heard.stations(app["band"]), heard.selected)
+        heard.render()
         t = app["target"]
         target_row.controls.clear()
         if not t:
@@ -243,12 +259,26 @@ async def main(page: ft.Page):
                                         (("ssb", "SSB"), ("cw", "CW"), ("digital", "Digital"))])
     power = ft.TextField(label="Transmit power (watts)", value=f"{s.power_w:g}", width=220,
                          on_blur=apply_set, on_submit=apply_set)
+    async def save_call(e):
+        s.callsign = call.value.strip().upper()
+        call.value = s.callsign
+        cfg.save(s)
+        heard.call_field.value = s.callsign
+        heard.rows, heard.age = [], None
+        if s.callsign and not heard.enabled:
+            heard.enabled = mapview.show_heard = True
+            layers.selected = sorted(set(layers.selected) | {"heard"})
+        await heard.refresh()
+
+    call = ft.TextField(label="Your callsign (optional)", value=s.callsign, width=220,
+                        on_blur=save_call, on_submit=save_call, capitalization=ft.TextCapitalization.CHARACTERS)
     noise = ft.Dropdown(label="Your noise level", value=s.noise, width=220, on_select=apply_set,
                         options=[ft.DropdownOption(key=k, text=t) for k, t in
                                  (("quiet", "Quiet / rural"), ("residential", "Residential"), ("city", "City / noisy"))])
     settings_view = ft.Column(spacing=16, controls=[
         ft.Text("Defaults work fine - change these only if you want to.", opacity=0.7),
-        ft.Text("Mode"), mode, power, noise,
+        ft.Text("Mode"), mode, power, noise, call,
+        ft.Text("A callsign shows real stations that heard you on the map (PSK Reporter).", size=12, opacity=0.65),
         ft.Text("Predictions are an empirical estimate for planning, not a guarantee.", size=12, opacity=0.6)])
 
     legend = ft.Row(spacing=14, controls=[
@@ -262,7 +292,7 @@ async def main(page: ft.Page):
                           "no color = not reachable.", size=12, opacity=0.65)
     map_view = ft.Column(scroll=ft.ScrollMode.AUTO, spacing=10, controls=[
         band_chips, ft.Row([map_when, layers], alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                            wrap=True), ft.Row([mapview.control], alignment=ft.MainAxisAlignment.CENTER), legend, legend_note, target_title, target_row])
+                            wrap=True), ft.Row([mapview.control], alignment=ft.MainAxisAlignment.CENTER), legend, legend_note, heard.control, target_title, target_row])
 
     swx_view, swx_refresh, swx_maybe = spacewx.build(page)
     views = [home, bands_view, map_view, swx_view, settings_view]
@@ -274,6 +304,8 @@ async def main(page: ft.Page):
         page.update()
         if e.control.selected_index == 3:
             page.run_task(swx_maybe)
+        if e.control.selected_index == 2:
+            page.run_task(heard.maybe_refresh)
 
     page.navigation_bar = ft.NavigationBar(selected_index=start, on_change=nav_change, destinations=[
         ft.NavigationBarDestination(icon=ft.Icons.HOME, label="Home"),
@@ -284,13 +316,16 @@ async def main(page: ft.Page):
     page.add(ft.SafeArea(expand=True, content=body))
 
     fit_map()
+    heard.call_field.value = s.callsign
     if start == 3:
         await swx_maybe()
-        if os.environ.get("HFPROP_SCROLL"):      # developer aid for screenshots
-            await asyncio.sleep(2)
-            await swx_view.scroll_to(offset=int(os.environ["HFPROP_SCROLL"]), duration=0)
     if s.has_location:
         await recompute()
+    if heard.enabled and s.callsign:
+        await heard.refresh()
+    if os.environ.get("HFPROP_SCROLL"):          # developer aid for screenshots
+        await asyncio.sleep(2)
+        await views[start].scroll_to(offset=int(os.environ["HFPROP_SCROLL"]), duration=0)
 
 
 if __name__ == "__main__":

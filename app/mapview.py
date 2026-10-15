@@ -9,6 +9,7 @@ from hfprop.targets import TARGETS
 OCEAN = "#cfe3ef"
 LAND = "#a9c49a"
 GRID = "#9fb9c8"
+HEARD_ME, I_HEARD, BOTH = "#1b6fd8", "#8e44c8", "#0a9e96"
 STATE_FILL = {"GO": "#2e9e4f", "MARGINAL": "#f0a000", "NO-GO": "#b8bcc2"}
 
 
@@ -22,8 +23,12 @@ def _stroke(color, width=1.0, opacity=1.0):
 
 
 class MapView:
-    def __init__(self, on_pick):
+    def __init__(self, on_pick, on_pick_station=None):
         self.on_pick = on_pick
+        self.on_pick_station = on_pick_station
+        self.stations = []        # real PSK Reporter stations (heard layer)
+        self.selected_call = None
+        self.show_heard = False
         self.w = self.h = 0
         self.me = None            # (lat, lon, label)
         self.dt = None
@@ -53,16 +58,28 @@ class MapView:
         self.w, self.h = e.width, e.height
         self.draw()
 
-    def set_data(self, me, dt, states, selected, heat=None):
+    def set_data(self, me, dt, states, selected, heat=None, stations=None, selected_call=None):
         self.me, self.dt, self.states, self.selected = me, dt, states, selected
         self.heat = heat or []
+        self.stations, self.selected_call = stations or [], selected_call
         self.draw()
 
     # --- interaction ---
     def _tap(self, e):
-        if not self.w or not self.show_dots:
+        if not self.w:
             return
         x, y = e.local_position.x, e.local_position.y
+        if self.show_heard and self.on_pick_station:
+            near, nd = None, max(16.0, self.w * 0.02)
+            for st in self.stations:
+                d = ((self._x(st["lon"]) - x) ** 2 + (self._y(st["lat"]) - y) ** 2) ** 0.5
+                if d < nd:
+                    near, nd = st, d
+            if near:
+                self.on_pick_station(near["call"])
+                return
+        if not self.show_dots:
+            return
         best, bd = None, max(24.0, self.w * 0.035)
         for t in TARGETS:
             d = ((self._x(t[3]) - x) ** 2 + (self._y(t[2]) - y) ** 2) ** 0.5
@@ -85,9 +102,13 @@ class MapView:
             self._land_key, self._land_shapes = key, shapes
         return self._land_shapes
 
+    @staticmethod
+    def _heard_color(st):
+        return BOTH if st["heard_me"] and st["i_heard"] else HEARD_ME if st["heard_me"] else I_HEARD
+
     def _legend(self):
         """Compact key in the bottom-left corner; skipped when the map is too small for it."""
-        bw, bh = 232, 104
+        bw, bh = 232, (124 if self.show_heard else 104)
         if self.w < bw * 1.6 or self.h < bh * 2:
             return []
         x0, y0 = 10, self.h - bh - 10
@@ -116,6 +137,11 @@ class MapView:
         dot(x0 + 62, y0 + 86, "#ffd400", "Sun overhead", 4)
         out.append(cv.Rect(x0 + 146, y0 + 89, 10, 10, paint=_fill("#0b1d3a", 0.5)))
         out.append(cv.Text(x0 + 160, y0 + 86, "Night", ink))
+        if self.show_heard:
+            out.append(cv.Text(x0 + 10, y0 + 104, "Real reports (PSK):", ink))
+            for dx, col, lab in ((112, HEARD_ME, "heard me"), (182, I_HEARD, "I heard")):
+                out.append(cv.Rect(x0 + dx, y0 + 105, 9, 9, paint=_fill(col)))
+                out.append(cv.Text(x0 + dx + 12, y0 + 104, lab, ink))
         return out
 
     def draw(self):
@@ -156,6 +182,24 @@ class MapView:
             x, y = self._x(t[3]), self._y(t[2])
             shapes.append(cv.Circle(x, y, r, _fill(STATE_FILL[state])))
             shapes.append(cv.Circle(x, y, r, _stroke("#ffffff", 1.2)))
+        if self.show_heard and self.me:
+            shown = self.stations[:60]
+            for st in shown:
+                col = self._heard_color(st)
+                sel = st["call"] == self.selected_call
+                for seg in mapdata.great_circle(self.me[0], self.me[1], st["lat"], st["lon"], 16):
+                    for (lo1, la1), (lo2, la2) in zip(seg, seg[1:]):
+                        shapes.append(cv.Line(self._x(lo1), self._y(la1), self._x(lo2), self._y(la2),
+                                              _stroke(col, 2.2 if sel else 1.0, 0.95 if sel else 0.40)))
+            q = max(4.0, self.w / 190)
+            for st in shown:
+                x, y = self._x(st["lon"]), self._y(st["lat"])
+                col = self._heard_color(st)
+                shapes.append(cv.Rect(x - q, y - q, 2 * q, 2 * q, paint=_fill(col)))
+                shapes.append(cv.Rect(x - q, y - q, 2 * q, 2 * q, paint=_stroke("#ffffff", 1.3)))
+                if st["call"] == self.selected_call:
+                    shapes.append(cv.Rect(x - q - 3, y - q - 3, 2 * q + 6, 2 * q + 6, paint=_stroke("#10233f", 2.0)))
+                    shapes.append(cv.Text(x + q + 6, y - 7, st["call"], ft.TextStyle(size=12, weight=ft.FontWeight.W_700, color="#10233f")))
         if self.selected:
             t = self.selected
             x, y = self._x(t[3]), self._y(t[2])
