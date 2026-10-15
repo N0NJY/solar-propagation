@@ -135,7 +135,7 @@ async def main(page: ft.Page):
                 padding=ft.Padding.symmetric(horizontal=10, vertical=6), border_radius=8,
                 bgcolor=STATE_FILL[r["state"]],
                 content=ft.Text(r["band"], size=13, weight=ft.FontWeight.BOLD,
-                                color=ft.Colors.WHITE if r["state"] != "NO-GO" else ft.Colors.BLACK87)))
+                                color=ft.Colors.WHITE if r["state"] != "NO-GO" else ft.Colors.BLACK_87)))
 
     def refresh_views():
         build_home()
