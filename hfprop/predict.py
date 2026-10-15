@@ -83,3 +83,13 @@ def band_table(lat, lon, dt, sw, st=None, targets=TARGETS):
         else: overall = NOGO
         rows.append({"band": name, "freq": f, "overall": overall, "go": go, "marginal": marg})
     return rows
+
+
+def target_bands(lat, lon, target, dt, sw, st=None):
+    """Every band's state from the user to one target (name, region, lat, lon)."""
+    st = st or Station()
+    out = []
+    for name, f in BANDS:
+        state, snr, det = link(lat, lon, target[2], target[3], f, dt, sw.ssn, sw.kp, sw.xray_flux, st)
+        out.append({"band": name, "state": state, "snr": snr, "muf": det["muf"]})
+    return out

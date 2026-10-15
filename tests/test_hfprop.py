@@ -56,3 +56,26 @@ def test_6m_closed_at_moderate_solar_flux():
 def test_high_sfi_opens_10m():
     assert state(UK, 28.5, 17, ssn=150) != predict.NOGO
     assert state(UK, 28.5, 17, ssn=20) == predict.NOGO
+
+
+def test_land_data_and_night_outline():
+    from hfprop import mapdata
+    rings = mapdata.land_rings()
+    assert len(rings) > 100 and all(len(r) % 2 == 0 for r in rings)
+    pts, dark = mapdata.night_outline(at(12))
+    assert len(pts) == 91 and dark in ("N", "S")
+    assert dark == "N"      # October: sun south of the equator -> night edge on the north side
+
+
+def test_great_circle_splits_at_dateline():
+    from hfprop import mapdata
+    segs = mapdata.great_circle(*FN31, 35.7, 139.7)
+    assert len(segs) == 2
+    assert all(abs(a[0] - b[0]) < 180 for seg in segs for a, b in zip(seg, seg[1:]))
+
+
+def test_target_bands_covers_all_bands():
+    sw = spaceweather.SpaceWeather(sfi=120, ssn=70, kp=2, xray_flux=1e-7)
+    out = predict.target_bands(*FN31, ("UK", "Europe", 51.5, -0.1), at(17), sw)
+    assert [r["band"] for r in out] == [b for b, _ in predict.BANDS]
+    assert {r["state"] for r in out} <= {predict.GO, predict.MARGINAL, predict.NOGO}
