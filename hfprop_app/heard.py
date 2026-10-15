@@ -19,6 +19,13 @@ def ago(seconds):
     return f"{m} min ago" if m < 90 else f"{m // 60} h ago"
 
 
+COMMON_MODES = ("FT8", "FT4", "JS8", "WSPR", "CW", "RTTY", "PSK31")
+
+
+def m_rank(m):
+    return (COMMON_MODES.index(m) if m in COMMON_MODES else len(COMMON_MODES), m)
+
+
 class Heard:
     def __init__(self, page, get_settings, get_state, save_settings, redraw):
         self.page, self.get_s, self.get_state, self.save, self.redraw = page, get_settings, get_state, save_settings, redraw
@@ -119,7 +126,7 @@ class Heard:
         self.status.value = (self.err + ". " if self.err else "") + f"{s.callsign} - real reports from PSK Reporter.{age}"
         base = self._rows_for(band, ignore_modes=True)
         counts = psk.mode_counts(base)
-        for m in self.modes:
+        for m in list(COMMON_MODES) + sorted(self.modes):
             counts.setdefault(m, 0)
         rows = self._rows_for(band)
         stations = psk.stations(rows, s.lat, s.lon)
@@ -135,7 +142,7 @@ class Heard:
         modes = ft.Row(wrap=True, spacing=6, run_spacing=4, controls=[
             ft.Chip(label=ft.Text(f"{m} ({n})"), selected=m in self.modes, show_checkmark=False,
                     on_click=lambda e, m=m: self._toggle(self.modes, m))
-            for m, n in sorted(counts.items(), key=lambda kv: -kv[1])] or
+            for m, n in sorted(counts.items(), key=lambda kv: (-kv[1], m_rank(kv[0])))] or
             [ft.Text("No reports in this window.", size=12, opacity=0.65)])
         only = ft.Switch(label=f"Only {band}", value=self.band_only,
                          on_change=lambda e: self._set("band_only", e.control.value))
