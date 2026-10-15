@@ -184,7 +184,13 @@ async def main(page: ft.Page):
         page.update()
 
     heard = Heard(page, lambda: s, lambda: {"band": app["band"], "sw": app["sw"]}, cfg.save, heard_redraw)
-    mapview = MapView(on_pick=pick_target, on_pick_station=heard.pick)
+
+    def map_hover(inside):
+        # the page scrolls with the mouse wheel; while the pointer is over the map the wheel zooms instead
+        map_view.scroll = None if inside else ft.ScrollMode.AUTO
+        map_view.update()
+
+    mapview = MapView(on_pick=pick_target, on_pick_station=heard.pick, on_hover=map_hover)
 
     def fit_map(e=None):
         """Size the 2:1 map to fit the window so the whole map and its legend are visible."""
@@ -477,6 +483,12 @@ async def main(page: ft.Page):
     page.run_task(ticker)
     if os.environ.get("HFPROP_ZOOM"):            # developer aid: start zoomed in on your location
         mapview.zoom_to_me(float(os.environ["HFPROP_ZOOM"]))
+    if os.environ.get("HFPROP_BENCH"):           # developer aid: zoom in and out, timings print via HFPROP_PROFILE
+        await asyncio.sleep(3)
+        once = os.environ["HFPROP_BENCH"] == "once"
+        for f in ((2.0,) if once else (2.0, 2.0, 2.0, 0.5, 0.5, 0.5)):
+            mapview.zoom_by(f)
+            await asyncio.sleep(1.0)
     if os.environ.get("HFPROP_SCROLL"):          # developer aid for screenshots
         await asyncio.sleep(2)
         await views[start].scroll_to(offset=int(os.environ["HFPROP_SCROLL"]), duration=0)

@@ -1,6 +1,8 @@
 """World map on a Flet canvas: zoom / pan / pinch, coastlines, lakes, borders, states, cities,
 Maidenhead grid squares, night shading, heat map, region dots and real (PSK) stations."""
 import math
+import os
+import threading
 import time
 
 import flet as ft
@@ -17,7 +19,9 @@ BORDER = "#6c7a89"
 STATE = "#8b98a5"
 HEARD_ME, I_HEARD, BOTH = "#1b6fd8", "#8e44c8", "#0a9e96"
 STATE_FILL = {"GO": "#2e9e4f", "MARGINAL": "#f0a000", "NO-GO": "#b8bcc2"}
-DRAW_INTERVAL = 0.10          # seconds between redraws while a finger / mouse is dragging
+PROFILE = bool(os.environ.get("HFPROP_PROFILE"))      # developer aid: print draw timings
+SETTLE_DELAY = float(os.environ.get("HFPROP_SETTLE", "0.25"))   # idle seconds after zoom / drag before the sharp redraw
+PREVIEW_INTERVAL = 0.03       # seconds between instant (transform-only) previews
 
 
 def _fill(color, opacity=1.0):
@@ -35,8 +39,9 @@ def heat_step(z):
 
 
 class MapView:
-    def __init__(self, on_pick, on_pick_station=None):
+    def __init__(self, on_pick, on_pick_station=None, on_hover=None):
         self.on_pick = on_pick
+        self.on_hover = on_hover      # callable(bool): pointer entered / left the map
         self.on_pick_station = on_pick_station
         self.w = self.h = 0
         self.view = mapdata.View()
@@ -52,15 +57,19 @@ class MapView:
         self.show_heard = False
         self.show_borders = self.show_states = self.show_cities = True
         self.show_grid = False
-        self._last_draw = 0.0
         self._gesture = None
+        self._drawn = None        # (z, clon, clat) the canvas was last drawn with
+        self._last_preview = 0.0
+        self._settle_timer = None
         self.canvas = cv.Canvas(shapes=[], on_resize=self._resize, expand=True)
+        self.holder = ft.Container(content=self.canvas, expand=True)   # moved / scaled for instant previews
         self.zoom_label = ft.Text("1x", size=11, weight=ft.FontWeight.W_600, color="#10233f")
         self.control = ft.Container(
             width=1000, height=500, bgcolor=OCEAN, border_radius=10, clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
             content=ft.Stack(fit=ft.StackFit.EXPAND, controls=[
                 ft.GestureDetector(
-                    expand=True, content=self.canvas, on_tap_up=self._tap, on_scroll=self._scroll,
+                    expand=True, content=self.holder, on_tap_up=self._tap, on_scroll=self._scroll,
+                    on_enter=lambda e: self._hover(True), on_exit=lambda e: self._hover(False),
                     on_scale_start=self._scale_start, on_scale_update=self._scale_update,
                     on_scale_end=self._scale_end),
                 ft.Container(right=8, top=8, padding=4, border_radius=10,
@@ -82,7 +91,7 @@ class MapView:
     def zoom_by(self, factor):
         if self.w:
             self.view.zoom_at(factor, self.w / 2, self.h / 2, self.w, self.h)
-            self.draw()
+            self._view_changed()
 
     def zoom_to_me(self, z=8.0):
         if self.me:
@@ -112,7 +121,7 @@ class MapView:
         dy = getattr(e.scroll_delta, "y", 0) or 0
         if dy:
             self.view.zoom_at(1.25 if dy < 0 else 0.8, e.local_position.x, e.local_position.y, self.w, self.h)
-            self._throttled_draw()
+            self._view_changed()
 
     def _scale_start(self, e):
         if not self.w:
@@ -127,16 +136,38 @@ class MapView:
         z0, lon, lat = self._gesture
         self.view.drag_to(lon, lat, e.local_focal_point.x, e.local_focal_point.y, self.w, self.h,
                           z=z0 * (e.scale or 1.0))
-        self._throttled_draw()
+        self._view_changed()
 
     def _scale_end(self, e):
         self._gesture = None
-        self.draw()
+        self._view_changed()
 
-    def _throttled_draw(self):
+    def _hover(self, inside):
+        if self.on_hover:
+            self.on_hover(inside)
+
+    def _view_changed(self):
+        """Zoom / pan feedback without a redraw: the already-drawn map is scaled and moved on the
+        display side (cheap), then one sharp redraw is made once the view stops changing."""
         now = time.monotonic()
-        if now - self._last_draw >= DRAW_INTERVAL:
-            self.draw()
+        if self._drawn and now - self._last_preview >= PREVIEW_INTERVAL:
+            self._last_preview = now
+            z0, clon0, clat0 = self._drawn
+            sl, sa = 360.0 / z0, 180.0 / z0
+            tx, ty = self.view.to_xy(clon0 - sl / 2, clat0 + sa / 2, self.w, self.h)   # old top-left corner
+            k = self.view.z / z0
+            self.holder.transform = ft.Transform(
+                matrix=ft.Matrix4.translation_values(tx, ty, 0).scale(k),
+                alignment=ft.Alignment.TOP_LEFT, transform_hit_tests=False)
+            try:
+                self.holder.update()
+            except Exception:
+                pass
+        if self._settle_timer:
+            self._settle_timer.cancel()
+        self._settle_timer = threading.Timer(SETTLE_DELAY, self.draw)
+        self._settle_timer.daemon = True
+        self._settle_timer.start()
 
     def _tap(self, e):
         if not self.w:
@@ -260,7 +291,7 @@ class MapView:
     def draw(self):
         if not self.w or not self.h:
             return
-        self._last_draw = time.monotonic()
+        t_start = time.perf_counter()
         v, w, h = self.view, self.w, self.h
         vb = v.bbox()
         geo = (vb[0], vb[3], w / (vb[2] - vb[0]), h / (vb[3] - vb[1]))
@@ -274,12 +305,13 @@ class MapView:
         def Y(lat):
             return (y1 - lat) * sy
 
+        mp = 1.8                                          # point-thinning distance in pixels
         detailed = z >= 2.2
         shapes = []
         # base: land (coarse when zoomed out, 50 m when zoomed in) and lakes
-        self._draw_polys("land50" if detailed else "land", geo, vb, _fill(LAND), True, 1.4, shapes)
+        self._draw_polys("land50" if detailed else "land", geo, vb, _fill(LAND), True, mp, shapes)
         if z >= 1.6:
-            self._draw_polys("lakes50", geo, vb, _fill(OCEAN), True, 1.4, shapes)
+            self._draw_polys("lakes50", geo, vb, _fill(OCEAN), True, mp, shapes)
 
         # heat map: finer cells as you zoom in, only for the visible area
         if self.show_heat and self.heat_fn:
@@ -287,13 +319,24 @@ class MapView:
             pad = step
             cells = self.heat_fn((vb[0] - pad, vb[1] - pad, vb[2] + pad, vb[3] + pad), step)
             cw, ch = step * sx, step * sy
+            runs = []                                     # [lat, lon0, lon1, key]: horizontal runs of like cells
             for la, lo, state, margin in cells:
                 if state == "GO":
-                    paint = _fill("#1f9d4a", 0.30 + 0.35 * min(1.0, max(0.0, margin) / 20.0))
+                    key = ("GO", round(min(1.0, max(0.0, margin) / 20.0) * 3) / 3)   # 4 shades of green
+                else:
+                    key = (state, 0)
+                last = runs[-1] if runs else None
+                if last and last[0] == la and last[3] == key and abs(lo - last[2] - step) < 1e-6:
+                    last[2] = lo
+                else:
+                    runs.append([la, lo, lo, key])
+            for la, lo0, lo1, (state, shade) in runs:
+                if state == "GO":
+                    paint = _fill("#1f9d4a", 0.30 + 0.35 * shade)
                 else:
                     paint = _fill("#f0a000", 0.42)
                 paint.anti_alias = False                  # exact cell edges: no double-blended seams
-                shapes.append(cv.Rect(X(lo) - cw / 2, Y(la) - ch / 2, cw, ch, paint=paint))
+                shapes.append(cv.Rect(X(lo0) - cw / 2, Y(la) - ch / 2, (lo1 - lo0) * sx + cw, ch, paint=paint))
 
         # graticule / Maidenhead grid squares
         ppd = sx                                          # pixels per degree of longitude
@@ -327,7 +370,7 @@ class MapView:
 
         # political lines
         if self.show_borders:
-            self._draw_polys("borders", geo, vb, _stroke(BORDER, 0.9 if z < 4 else 1.3, 0.85), False, 1.5, shapes)
+            self._draw_polys("borders", geo, vb, _stroke(BORDER, 0.9 if z < 4 else 1.3, 0.85), False, 1.8, shapes)
         if self.show_states and z >= 1.6:
             self._draw_polys("states", geo, vb, _stroke(STATE, 0.6 if z < 4 else 0.9, 0.8), False, 1.5, shapes)
 
@@ -421,8 +464,15 @@ class MapView:
         shapes += self._legend()
         shapes += self._scale_bar()
         self.canvas.shapes = shapes
+        self.holder.transform = None
+        self._drawn = (v.z, v.clon, v.clat)
+        t_built = time.perf_counter()
         try:
-            self.canvas.update()
+            self.holder.update()
             self.zoom_label.update()
         except Exception:
             pass   # not on screen yet; shapes are kept and redrawn when it mounts
+        if PROFILE:
+            t_end = time.perf_counter()
+            print(f"draw z={z:g} shapes={len(shapes)} build={(t_built - t_start) * 1000:.0f}ms "
+                  f"update={(t_end - t_built) * 1000:.0f}ms", flush=True)
