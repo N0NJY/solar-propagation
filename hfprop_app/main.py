@@ -186,17 +186,12 @@ async def main(page: ft.Page):
 
     heard = Heard(page, lambda: s, lambda: {"band": app["band"], "sw": app["sw"]}, cfg.save, heard_redraw)
 
-    def map_hover(inside):
-        # the page scrolls with the mouse wheel; while the pointer is over the map the wheel zooms instead
-        map_view.scroll = None if inside else ft.ScrollMode.AUTO
-        map_view.update()
-
-    mapview = MapView(on_pick=pick_target, on_pick_station=heard.pick, on_hover=map_hover)
+    mapview = MapView(on_pick=pick_target, on_pick_station=heard.pick)
 
     def fit_map(e=None):
-        """Size the 2:1 map to fit the window so the whole map and its legend are visible."""
+        """Size the 2:1 map to fit the window (the page does not scroll)."""
         w, h = page.width or 1000, page.height or 700
-        mapview.control.width = max(300, min(w - 32, 2 * (h - 270)))
+        mapview.control.width = max(300, min(w - 32, 2 * (h - 300)))
         mapview.control.height = mapview.control.width / 2
         try:
             page.update()
@@ -427,18 +422,34 @@ async def main(page: ft.Page):
         ft.Text("A callsign shows real stations that heard you on the map (PSK Reporter).", size=12, opacity=0.65),
         ft.Text("Predictions are an empirical estimate for planning, not a guarantee.", size=12, opacity=0.6)])
 
-    legend = ft.Row(spacing=14, controls=[
-        ft.Row(spacing=5, controls=[ft.Container(width=12, height=12, border_radius=6, bgcolor=STATE_FILL[k]),
-                                    ft.Text(t, size=12)])
-        for k, t in (("GO", "Good"), ("MARGINAL", "Marginal"), ("NO-GO", "Not reachable"))] +
-        [ft.Row(spacing=5, controls=[ft.Container(width=12, height=12, border_radius=6, bgcolor="#ffd400"),
-                                     ft.Text("Sun overhead", size=12)])])
-    legend_note = ft.Text("Dots are representative points for each region, not stations. "
-                          "Heat map: green = signal expected, deeper green = stronger; amber = marginal; "
-                          "no color = not reachable.", size=12, opacity=0.65)
-    map_view = ft.Column(scroll=ft.ScrollMode.AUTO, spacing=10, controls=[
-        band_chips, ft.Row([map_when, layers], alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                            wrap=True), detail_row, ft.Row([mapview.control], alignment=ft.MainAxisAlignment.CENTER), legend, legend_note, heard.control, target_title, target_row])
+    async def show_stations(e=None):
+        if not heard.enabled:                                  # opening the list also switches the layer on
+            heard.enabled = mapview.show_heard = True
+            layers.selected = sorted(set(layers.selected) | {"heard"})
+            update_map()
+        heard.render()
+        body.content = stations_view
+        page.update()
+        try:
+            await stations_view.scroll_to(offset=0, duration=0)
+        except Exception:
+            pass
+        await heard.maybe_refresh()
+
+    def back_to_map(e=None):
+        body.content = map_view
+        page.update()
+
+    stations_btn = ft.FilledTonalButton("Stations heard", icon=ft.Icons.LIST, on_click=show_stations)
+    # the map page does not scroll, so the mouse wheel is free to zoom the map
+    map_view = ft.Column(spacing=10, controls=[
+        band_chips, ft.Row([map_when, layers, stations_btn], alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                           wrap=True), detail_row, ft.Row([mapview.control], alignment=ft.MainAxisAlignment.CENTER),
+        target_title, target_row])
+    stations_view = ft.Column(scroll=ft.ScrollMode.AUTO, spacing=10, controls=[
+        ft.Row([ft.TextButton("Back to map", icon=ft.Icons.ARROW_BACK, on_click=back_to_map),
+                ft.Text("Tap a station to highlight it on the map.", size=12, opacity=0.65)]),
+        heard.control])
 
     swx_view, swx_refresh, swx_maybe = spacewx.build(page, lambda: False, lambda: s.units)
     views = [home, bands_view, map_view, swx_view, settings_view]
@@ -487,8 +498,22 @@ async def main(page: ft.Page):
     page.run_task(ticker)
     if os.environ.get("HFPROP_ZOOM"):            # developer aid: start zoomed in on your location
         mapview.zoom_to_me(float(os.environ["HFPROP_ZOOM"]))
+    if os.environ.get("HFPROP_STATIONS"):         # developer aid: open the Stations page
+        await show_stations()
     if os.environ.get("HFPROP_BENCH"):           # developer aid: zoom in and out, timings print via HFPROP_PROFILE
         await asyncio.sleep(3)
+        if os.environ["HFPROP_BENCH"] == "stress":       # zoom to the limit fast, then the recentre / world buttons
+            for _ in range(8):
+                mapview.zoom_by(2.0)
+                await asyncio.sleep(0.05)
+            await asyncio.sleep(3)
+            print("-> world button", flush=True)
+            mapview.reset_view()
+            await asyncio.sleep(3)
+            print("-> my location button", flush=True)
+            mapview.zoom_to_me()
+            await asyncio.sleep(3)
+            return
         once = os.environ["HFPROP_BENCH"] == "once"
         for f in ((2.0,) if once else (2.0, 2.0, 2.0, 0.5, 0.5, 0.5)):
             mapview.zoom_by(f)
