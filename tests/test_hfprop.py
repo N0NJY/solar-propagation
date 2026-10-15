@@ -79,3 +79,12 @@ def test_target_bands_covers_all_bands():
     out = predict.target_bands(*FN31, ("UK", "Europe", 51.5, -0.1), at(17), sw)
     assert [r["band"] for r in out] == [b for b, _ in predict.BANDS]
     assert {r["state"] for r in out} <= {predict.GO, predict.MARGINAL, predict.NOGO}
+
+
+def test_reach_grid_day_night_and_bounds():
+    sw = spaceweather.SpaceWeather(sfi=120, ssn=70, kp=2, xray_flux=1e-7)
+    day = predict.reach_grid(*FN31, 14.2, at(17), sw, step=10)
+    night10 = predict.reach_grid(*FN31, 28.5, at(5), sw, step=10)
+    assert day and all(-90 < c[0] < 90 and -180 < c[1] < 180 for c in day)
+    assert {c[2] for c in day} <= {predict.GO, predict.MARGINAL}
+    assert len(night10) < len(day) / 4          # 10m is mostly shut at night

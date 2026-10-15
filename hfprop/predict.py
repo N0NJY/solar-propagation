@@ -93,3 +93,25 @@ def target_bands(lat, lon, target, dt, sw, st=None):
         state, snr, det = link(lat, lon, target[2], target[3], f, dt, sw.ssn, sw.kp, sw.xray_flux, st)
         out.append({"band": name, "state": state, "snr": snr, "muf": det["muf"]})
     return out
+
+
+def reach_grid(lat, lon, freq, dt, sw, st=None, step=6):
+    """Reachability over the whole world for one frequency, for the map heat layer.
+
+    Returns [(cell_lat, cell_lon, state, margin_db)] for every cell centre that is GO or
+    MARGINAL. margin_db is the signal margin over what is needed (bigger = stronger).
+    """
+    st = st or Station()
+    cells = []
+    half = step / 2.0
+    la = -90 + half
+    while la < 90:
+        lo = -180 + half
+        while lo < 180:
+            if distance_km(lat, lon, la, lo) >= 50:
+                state, snr, _ = link(lat, lon, la, lo, freq, dt, sw.ssn, sw.kp, sw.xray_flux, st)
+                if state != NOGO:
+                    cells.append((la, lo, state, snr - st.snr_needed))
+            lo += step
+        la += step
+    return cells

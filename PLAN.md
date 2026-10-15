@@ -9,6 +9,7 @@ what you can reach, and a world map. Python, Flet UI. Linux first, Android secon
 - [~] Phase 1 - Flet app (`app/main.py`): Home, Bands, Settings screens render with live data;
       Map tab done (coastlines, day/night shading, sun point, targets coloured per band,
       tap a place for all bands to it, great-circle path). Interactions confirmed working by user.
+      Heat map layer added (world reach grid per band, Places/Heat map toggle).
       Next: 24-hour band-open strip, alerts banner, Linux packaging.
       Run: `.venv/bin/python -m app.main` (`HFPROP_TAB=1` opens on a given tab).
 

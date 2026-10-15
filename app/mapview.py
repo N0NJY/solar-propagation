@@ -29,6 +29,10 @@ class MapView:
         self.dt = None
         self.states = {}          # target name -> GO / MARGINAL
         self.selected = None      # target tuple
+        self.heat = []            # reach_grid cells
+        self.heat_step = 6
+        self.show_dots = True
+        self.show_heat = True
         self._land_key = None
         self._land_shapes = []
         self.canvas = cv.Canvas(shapes=[], on_resize=self._resize, expand=True)
@@ -47,13 +51,14 @@ class MapView:
         self.w, self.h = e.width, e.height
         self.draw()
 
-    def set_data(self, me, dt, states, selected):
+    def set_data(self, me, dt, states, selected, heat=None):
         self.me, self.dt, self.states, self.selected = me, dt, states, selected
+        self.heat = heat or []
         self.draw()
 
     # --- interaction ---
     def _tap(self, e):
-        if not self.w:
+        if not self.w or not self.show_dots:
             return
         x, y = e.local_position.x, e.local_position.y
         best, bd = None, max(24.0, self.w * 0.035)
@@ -82,6 +87,15 @@ class MapView:
         if not self.w or not self.h:
             return
         shapes = list(self._land())
+        if self.show_heat:
+            cw, ch = self.heat_step / 360.0 * self.w, self.heat_step / 180.0 * self.h
+            for la, lo, state, margin in self.heat:
+                if state == "GO":
+                    paint = _fill("#1f9d4a", 0.30 + 0.35 * min(1.0, max(0.0, margin) / 20.0))
+                else:
+                    paint = _fill("#f0a000", 0.42)
+                paint.anti_alias = False   # exact cell edges: no double-blended seams
+                shapes.append(cv.Rect(self._x(lo) - cw / 2, self._y(la) - ch / 2, cw, ch, paint=paint))
         for lon in range(-150, 181, 30):
             shapes.append(cv.Line(self._x(lon), 0, self._x(lon), self.h, _stroke(GRID, 0.6, 0.6)))
         for lat in (-60, -30, 0, 30, 60):
@@ -102,7 +116,7 @@ class MapView:
                 for (lo1, la1), (lo2, la2) in zip(seg, seg[1:]):
                     shapes.append(cv.Line(self._x(lo1), self._y(la1), self._x(lo2), self._y(la2),
                                           _stroke("#1b4f9c", 2.0)))
-        for t in TARGETS:
+        for t in (TARGETS if self.show_dots else []):
             state = self.states.get(t[0], "NO-GO")
             x, y = self._x(t[3]), self._y(t[2])
             shapes.append(cv.Circle(x, y, r, _fill(STATE_FILL[state])))

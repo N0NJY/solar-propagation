@@ -104,6 +104,19 @@ async def main(page: ft.Page):
 
     mapview = MapView(on_pick=pick_target)
 
+    def layers_change(e):
+        sel = set(e.control.selected)
+        mapview.show_dots, mapview.show_heat = "places" in sel, "heat" in sel
+        mapview.draw()
+        target_title.visible = mapview.show_dots
+        target_row.visible = mapview.show_dots
+        page.update()
+
+    layers = ft.SegmentedButton(selected=["places", "heat"], allow_multiple_selection=True,
+                                allow_empty_selection=False, on_change=layers_change,
+                                segments=[ft.Segment(value="places", label=ft.Text("Places")),
+                                          ft.Segment(value="heat", label=ft.Text("Heat map"))])
+
     def pick_band(name):
         app["band"] = name
         update_map()
@@ -121,7 +134,9 @@ async def main(page: ft.Page):
         states.update({e["target"]: "MARGINAL" for e in row["marginal"]})
         when = datetime.now(timezone.utc) + timedelta(hours=app["offset"])
         map_when.value = f'{app["band"]} - {row["overall"]} - {when:%Y-%m-%d %H:%M} UTC'
-        mapview.set_data((s.lat, s.lon, s.label), when, states, app["target"])
+        freq = dict(predict.BANDS)[app["band"]]
+        heat = predict.reach_grid(s.lat, s.lon, freq, when, app["sw"], s.station(), mapview.heat_step)
+        mapview.set_data((s.lat, s.lon, s.label), when, states, app["target"], heat)
         t = app["target"]
         target_row.controls.clear()
         if not t:
@@ -229,8 +244,12 @@ async def main(page: ft.Page):
         for k, t in (("GO", "Good"), ("MARGINAL", "Marginal"), ("NO-GO", "Not reachable"))] +
         [ft.Row(spacing=5, controls=[ft.Container(width=12, height=12, border_radius=6, bgcolor="#ffd400"),
                                      ft.Text("Sun overhead", size=12)])])
+    legend_note = ft.Text("Dots are representative points for each region, not stations. "
+                          "Heat map: green = signal expected, deeper green = stronger; amber = marginal; "
+                          "no color = not reachable.", size=12, opacity=0.65)
     map_view = ft.Column(scroll=ft.ScrollMode.AUTO, spacing=10, controls=[
-        band_chips, map_when, mapview.control, legend, target_title, target_row])
+        band_chips, ft.Row([map_when, layers], alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                            wrap=True), mapview.control, legend, legend_note, target_title, target_row])
 
     views = [home, bands_view, map_view, settings_view]
     start = int(os.environ.get("HFPROP_TAB", "0"))   # developer aid: open on a given tab
