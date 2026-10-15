@@ -113,7 +113,7 @@ async def main(page: ft.Page):
         page.update()
 
     layers = ft.SegmentedButton(selected=["places", "heat"], allow_multiple_selection=True,
-                                allow_empty_selection=False, on_change=layers_change,
+                                allow_empty_selection=True, on_change=layers_change,
                                 segments=[ft.Segment(value="places", label=ft.Text("Places")),
                                           ft.Segment(value="heat", label=ft.Text("Heat map"))])
 
