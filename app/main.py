@@ -9,6 +9,8 @@ from hfprop import geo, predict, settings as cfg, spaceweather
 from app import spacewx
 from app.heard import Heard
 from app.mapview import MapView, STATE_FILL
+from app.spacewx import Chart
+from app.strip import draw_strip
 
 STATE_COLOR = {"GO": ft.Colors.GREEN_600, "MARGINAL": ft.Colors.AMBER_700, "NO-GO": ft.Colors.RED_600}
 STATE_ICON = {"GO": ft.Icons.CHECK_CIRCLE, "MARGINAL": ft.Icons.WARNING_AMBER, "NO-GO": ft.Icons.CANCEL}
@@ -44,7 +46,7 @@ async def main(page: ft.Page):
     s = cfg.load()
     if os.environ.get("HFPROP_CALL"):                 # developer aid
         s.callsign = os.environ["HFPROP_CALL"].upper()
-    app = {"sw": None, "rows": None, "offset": 0, "band": "20m", "target": None}
+    app = {"sw": None, "rows": None, "strip": None, "offset": 0, "band": "20m", "target": None}
 
     where = ft.TextField(label="Zip code, grid square (FN31), or lat,lon", value=s.where,
                          expand=True, on_submit=lambda e: page.run_task(go))
@@ -95,6 +97,14 @@ async def main(page: ft.Page):
                 title=ft.Text(r["overall"], weight=ft.FontWeight.BOLD, color=STATE_COLOR[r["overall"]]),
                 subtitle=ft.Text(f'{len(r["go"])} good, {len(r["marginal"])} marginal  •  {subtitle}', size=12),
                 controls=items)))
+
+    strip_chart = Chart(300, draw_strip)
+    strip_card = ft.Card(content=ft.Container(padding=14, content=ft.Column(spacing=8, controls=[
+        ft.Text("Best times: next 24 hours", size=16, weight=ft.FontWeight.W_600),
+        ft.Text("Each row is a band; each column an hour starting now (outlined). Green = good, "
+                "amber = marginal, faint = closed. Local time is approximate (from your longitude).",
+                size=12, opacity=0.65),
+        strip_chart.control])))
 
     band_chips = ft.Row(scroll=ft.ScrollMode.AUTO, spacing=6)
     map_when = ft.Text(size=13, opacity=0.7)
@@ -182,6 +192,8 @@ async def main(page: ft.Page):
                                 color=ft.Colors.WHITE if r["state"] != "NO-GO" else ft.Colors.BLACK_87)))
 
     def refresh_views():
+        if app["strip"]:
+            strip_chart.set_data(app["strip"])
         build_home()
         build_bands()
         update_map()
@@ -194,13 +206,16 @@ async def main(page: ft.Page):
     def compute(offset):
         sw = spaceweather.get_space_weather()
         dt = datetime.now(timezone.utc) + timedelta(hours=offset)
-        return sw, predict.band_table(s.lat, s.lon, dt, sw, s.station())
+        first = dt.replace(minute=0, second=0, microsecond=0)
+        strip = {"grid": predict.day_strip(s.lat, s.lon, first, sw, s.station()),
+                 "start_hour": first.hour, "lon": s.lon}
+        return sw, predict.band_table(s.lat, s.lon, dt, sw, s.station()), strip
 
     async def recompute():
         spin.visible = True
         page.update()
         try:
-            app["sw"], app["rows"] = await asyncio.to_thread(compute, app["offset"])
+            app["sw"], app["rows"], app["strip"] = await asyncio.to_thread(compute, app["offset"])
         except Exception as ex:
             err.value = f"Could not update: {ex}"
         spin.visible = False
@@ -238,7 +253,7 @@ async def main(page: ft.Page):
     bands_view = ft.Column(scroll=ft.ScrollMode.AUTO, spacing=8, controls=[
         ft.SegmentedButton(selected=["Now"], allow_empty_selection=False, on_change=set_offset,
                            segments=[ft.Segment(value=n, label=ft.Text(n)) for n, _ in OFFSETS]),
-        bands_header, bands])
+        bands_header, strip_card, bands])
 
     def save_set(e=None):
         s.mode = mode.selected and list(mode.selected)[0]

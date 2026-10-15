@@ -115,3 +115,15 @@ def reach_grid(lat, lon, freq, dt, sw, st=None, step=6):
             lo += step
         la += step
     return cells
+
+
+def day_strip(lat, lon, start, sw, st=None, hours=24, targets=TARGETS):
+    """Band outlook: {band: [overall state for each of the next `hours` hours]}.
+
+    `start` should be a timezone-aware datetime already floored to the hour."""
+    from datetime import timedelta
+    out = {name: [] for name, _ in BANDS}
+    for h in range(hours):
+        for row in band_table(lat, lon, start + timedelta(hours=h), sw, st, targets):
+            out[row["band"]].append(row["overall"])
+    return out

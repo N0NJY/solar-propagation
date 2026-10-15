@@ -88,3 +88,13 @@ def test_reach_grid_day_night_and_bounds():
     assert day and all(-90 < c[0] < 90 and -180 < c[1] < 180 for c in day)
     assert {c[2] for c in day} <= {predict.GO, predict.MARGINAL}
     assert len(night10) < len(day) / 4          # 10m is mostly shut at night
+
+
+def test_day_strip_shape_and_diurnal_pattern():
+    sw = spaceweather.SpaceWeather(sfi=130, ssn=85, kp=2, xray_flux=1e-7)
+    strip = predict.day_strip(*FN31, at(0), sw, hours=24)
+    assert set(strip) == {b for b, _ in predict.BANDS} and all(len(v) == 24 for v in strip.values())
+    ten = strip["10m"]            # high band: daytime only (FN31 is UTC-5; local noon ~ 17 UTC)
+    assert ten[17] != predict.NOGO and ten[5] == predict.NOGO
+    eighty = strip["80m"]         # low band: night opens, midday shut for long range
+    assert eighty[6] != predict.NOGO

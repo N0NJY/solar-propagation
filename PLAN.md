@@ -17,7 +17,8 @@ what you can reach, and a world map. Python, Flet UI. Linux first, Android secon
       on the map, filters for window/direction/mode/band, station list, and a 'prediction check'
       comparing the model with real reports. Needs the user's callsign (Settings or the panel).
       One PSK request per 5 min (cached); filtering is local.
-      Next: 24-hour band-open strip, alerts banner, Linux packaging.
+      24-hour 'Best times' band outlook grid added to the Bands tab.
+      Next: tune model against PSK data; alerts banner; Linux packaging; then Android, alerts banner, Linux packaging.
       Run: `.venv/bin/python -m app.main` (`HFPROP_TAB=1` opens on a given tab).
 
 ## Phase 1 - Linux desktop app (Flet)
