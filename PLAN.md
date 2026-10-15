@@ -6,6 +6,9 @@ what you can reach, and a world map. Python, Flet UI. Linux first, Android secon
 
 ## Status
 - [x] Phase 0 - Core engine + CLI (`hfprop/`, 7 tests passing, live NOAA data)
+- [~] Phase 1 - Flet app (`app/main.py`): Home, Bands, Settings screens render with live data;
+      tab switching / time selector / Go button still need hands-on testing; map not started.
+      Run: `.venv/bin/python -m app.main` (`HFPROP_TAB=1` opens on a given tab).
 
 ## Phase 1 - Linux desktop app (Flet)
 Install Flet in the venv, build `app/main.py` using `hfprop` unchanged.
