@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hfprop"
+version = "0.1.0"
+description = "HF / ionospheric propagation prediction and space weather for hams and SWLs"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["flet>=1.0,<2", "flet-desktop>=1.0,<2"]
+
+[project.scripts]
+hfprop = "hfprop.cli:main"
+hfprop-app = "hfprop_app.main:run"
+
+[tool.setuptools]
+packages = ["hfprop", "hfprop_app"]
+
+[tool.setuptools.package-data]
+hfprop = ["data/*.json"]

@@ -1,16 +1,16 @@
-"""Flet front end for hfprop.  Run:  .venv/bin/python -m app.main"""
+"""Flet front end for hfprop.  Run:  hfprop-app   (or: python -m hfprop_app)"""
 import asyncio
 import os
 from datetime import datetime, timezone, timedelta
 
 import flet as ft
 
-from hfprop import geo, predict, settings as cfg, spaceweather
-from app import spacewx
-from app.heard import Heard
-from app.mapview import MapView, STATE_FILL
-from app.spacewx import Chart
-from app.strip import draw_strip
+from hfprop import geo, predict, settings as cfg, spaceweather, summary, swx
+from hfprop_app import spacewx
+from hfprop_app.heard import Heard
+from hfprop_app.mapview import MapView, STATE_FILL
+from hfprop_app.spacewx import Chart
+from hfprop_app.strip import draw_strip
 
 STATE_COLOR = {"GO": ft.Colors.GREEN_600, "MARGINAL": ft.Colors.AMBER_700, "NO-GO": ft.Colors.RED_600}
 STATE_ICON = {"GO": ft.Icons.CHECK_CIRCLE, "MARGINAL": ft.Icons.WARNING_AMBER, "NO-GO": ft.Icons.CANCEL}
@@ -43,10 +43,12 @@ async def main(page: ft.Page):
     page.title = "HF Propagation"
     page.theme_mode = ft.ThemeMode.SYSTEM
     page.padding = 0
+    page.window.width, page.window.height = 1000, 780
+    page.window.min_width, page.window.min_height = 420, 560
     s = cfg.load()
     if os.environ.get("HFPROP_CALL"):                 # developer aid
         s.callsign = os.environ["HFPROP_CALL"].upper()
-    app = {"sw": None, "rows": None, "strip": None, "offset": 0, "band": "20m", "target": None}
+    app = {"sw": None, "rows": None, "strip": None, "scales": None, "updated": None, "offset": 0, "band": "20m", "target": None}
 
     where = ft.TextField(label="Zip code, grid square (FN31), or lat,lon", value=s.where,
                          expand=True, on_submit=lambda e: page.run_task(go))
@@ -58,7 +60,65 @@ async def main(page: ft.Page):
     bands = ft.Column(spacing=6)
     bands_header = ft.Text(size=13, opacity=0.7)
 
+    banner = ft.Container(visible=False, border_radius=12, padding=12, ink=True, on_click=lambda e: go_tab(3))
+    open_card = ft.Column(spacing=8)
+
+    def go_tab(i):
+        page.navigation_bar.selected_index = i
+        body.content = views[i]
+        page.update()
+        if i == 3:
+            page.run_task(swx_maybe)
+        if i == 2:
+            page.run_task(heard.maybe_refresh)
+
+    def build_banner():
+        sw = app["sw"]
+        if not sw:
+            banner.visible = False
+            return
+        level, msgs = summary.alerts(sw, app["scales"])
+        color = [ft.Colors.GREEN_600, ft.Colors.AMBER_700, ft.Colors.ORANGE_800, ft.Colors.RED_700][level]
+        icon = [ft.Icons.CHECK_CIRCLE, ft.Icons.INFO, ft.Icons.WARNING_AMBER, ft.Icons.REPORT][level]
+        banner.bgcolor = ft.Colors.with_opacity(0.14, color)
+        banner.border = ft.Border.all(1, ft.Colors.with_opacity(0.5, color))
+        banner.content = ft.Row(vertical_alignment=ft.CrossAxisAlignment.START, controls=[
+            ft.Icon(icon, color=color),
+            ft.Column(spacing=2, expand=True, controls=(
+                [ft.Text(m, size=14, weight=ft.FontWeight.W_600) for m in msgs] if msgs else
+                [ft.Text("Quiet: no flares or storms. HF follows the normal solar-flux pattern.",
+                         size=14, weight=ft.FontWeight.W_600)]) +
+                [ft.Text("Tap for details on the Space Wx page.", size=11, opacity=0.6)])])
+        banner.visible = True
+
+    def build_open():
+        rows = app["rows"]
+        open_card.controls.clear()
+        if not rows:
+            return
+        go, marginal = summary.open_now(rows)
+        when = "right now" if app["offset"] == 0 else f"at +{app['offset']} h"
+        open_card.controls.append(ft.Text(f"Bands open {when}", size=16, weight=ft.FontWeight.W_600))
+        if go:
+            open_card.controls.append(ft.Row(wrap=True, spacing=8, run_spacing=8, controls=[
+                ft.Container(padding=ft.Padding.symmetric(horizontal=12, vertical=8), border_radius=10,
+                             bgcolor=STATE_COLOR["GO"],
+                             content=ft.Text(f"{b}  \u00b7  {n} regions", color=ft.Colors.WHITE,
+                                             weight=ft.FontWeight.BOLD, size=14)) for b, n in go]))
+        else:
+            open_card.controls.append(ft.Text("No band looks reliable at the moment.", size=14))
+        if marginal:
+            open_card.controls.append(ft.Text("Marginal: " + ", ".join(marginal), size=13, opacity=0.8))
+        if app["strip"] and app["offset"] == 0:
+            nxt = summary.next_openings(app["strip"])
+            if nxt:
+                open_card.controls.append(ft.Text(
+                    "Next openings: " + "; ".join(f"{b} in {h} h ({u:02d}Z)" for b, h, u in nxt),
+                    size=13, opacity=0.8))
+
     def build_home():
+        build_banner()
+        build_open()
         sw = app["sw"]
         tiles.controls.clear()
         notes.controls.clear()
@@ -72,7 +132,8 @@ async def main(page: ft.Page):
             notes.controls.append(ft.Text(f"• {v}", size=14))
         age = "live" if sw.live else (f"offline - {sw.age_hours:.0f} h old data" if sw.fetched
                                       else "offline - no data yet, using defaults")
-        notes.controls.append(ft.Text(f"Data: NOAA SWPC ({age})", size=12, opacity=0.6))
+        upd = f"  -  updated {app['updated']:%H:%M}" if app["updated"] else ""
+        notes.controls.append(ft.Text(f"Data: NOAA SWPC ({age}){upd}", size=12, opacity=0.6))
 
     def build_bands():
         bands.controls.clear()
@@ -209,13 +270,15 @@ async def main(page: ft.Page):
         first = dt.replace(minute=0, second=0, microsecond=0)
         strip = {"grid": predict.day_strip(s.lat, s.lon, first, sw, s.station()),
                  "start_hour": first.hour, "lon": s.lon}
-        return sw, predict.band_table(s.lat, s.lon, dt, sw, s.station()), strip
+        return sw, predict.band_table(s.lat, s.lon, dt, sw, s.station()), strip, swx.get_scales()
 
     async def recompute():
         spin.visible = True
         page.update()
         try:
-            app["sw"], app["rows"], app["strip"] = await asyncio.to_thread(compute, app["offset"])
+            app["sw"], app["rows"], app["strip"], app["scales"] = await asyncio.to_thread(compute, app["offset"])
+            app["updated"] = datetime.now()
+            err.value = ""
         except Exception as ex:
             err.value = f"Could not update: {ex}"
         spin.visible = False
@@ -223,6 +286,7 @@ async def main(page: ft.Page):
 
     async def go(e=None):
         err.value = ""
+        err.color = ft.Colors.RED_400
         text = where.value.strip()
         if not text:
             err.value = "Enter a zip code, grid square, or lat,lon."
@@ -247,9 +311,29 @@ async def main(page: ft.Page):
             await recompute()
 
     # ---- screens ----
+    async def find_me(e):
+        err.value = ""
+        spin.visible = True
+        page.update()
+        try:
+            lat, lon, label = await asyncio.to_thread(geo.locate_by_ip)
+        except Exception as ex:
+            spin.visible = False
+            err.value = str(ex) if isinstance(ex, ValueError) else "Could not look up your location (need internet). Type a zip or grid instead."
+            page.update()
+            return
+        grid = geo.latlon_to_grid(lat, lon)
+        where.value = grid
+        s.where, s.lat, s.lon, s.label = grid, lat, lon, f"{label} ({grid})"
+        cfg.save(s)
+        await recompute()
+
     home = ft.Column(scroll=ft.ScrollMode.AUTO, spacing=14, controls=[
         ft.Row([where, ft.FilledButton("Go", on_click=go, height=48), spin]),
-        err, loc_text, tiles, notes])
+        ft.Row(wrap=True, spacing=8, controls=[
+            ft.OutlinedButton("Find me (approximate)", icon=ft.Icons.MY_LOCATION, on_click=find_me),
+            ft.Text("Uses your internet address; accurate to about the city.", size=12, opacity=0.6)]),
+        err, loc_text, banner, open_card, tiles, notes])
     bands_view = ft.Column(scroll=ft.ScrollMode.AUTO, spacing=8, controls=[
         ft.SegmentedButton(selected=["Now"], allow_empty_selection=False, on_change=set_offset,
                            segments=[ft.Segment(value=n, label=ft.Text(n)) for n, _ in OFFSETS]),
@@ -262,6 +346,7 @@ async def main(page: ft.Page):
         except ValueError:
             pass
         s.noise = noise.value
+        s.gain_dbi = float(antenna.value)
         cfg.save(s)
 
     async def apply_set(e):
@@ -290,9 +375,14 @@ async def main(page: ft.Page):
     noise = ft.Dropdown(label="Your noise level", value=s.noise, width=220, on_select=apply_set,
                         options=[ft.DropdownOption(key=k, text=t) for k, t in
                                  (("quiet", "Quiet / rural"), ("residential", "Residential"), ("city", "City / noisy"))])
-    settings_view = ft.Column(spacing=16, controls=[
+    gains = [(-6.0, "Compromise / indoor / loaded (-6 dBi)"), (-2.0, "Vertical or ground-mounted (-2 dBi)"),
+             (0.0, "Dipole or wire (0 dBi)"), (6.0, "Small beam (+6 dBi)"), (11.0, "Large beam (+11 dBi)")]
+    gain_now = min(gains, key=lambda g: abs(g[0] - s.gain_dbi))[0]
+    antenna = ft.Dropdown(label="Your antenna", value=str(gain_now), width=340, on_select=apply_set,
+                          options=[ft.DropdownOption(key=str(g), text=t) for g, t in gains])
+    settings_view = ft.Column(scroll=ft.ScrollMode.AUTO, spacing=16, controls=[
         ft.Text("Defaults work fine - change these only if you want to.", opacity=0.7),
-        ft.Text("Mode"), mode, power, noise, call,
+        ft.Text("Mode"), mode, power, antenna, noise, call,
         ft.Text("A callsign shows real stations that heard you on the map (PSK Reporter).", size=12, opacity=0.65),
         ft.Text("Predictions are an empirical estimate for planning, not a guarantee.", size=12, opacity=0.6)])
 
@@ -331,6 +421,9 @@ async def main(page: ft.Page):
     page.add(ft.SafeArea(expand=True, content=body))
 
     fit_map()
+    if not s.has_location:
+        err.value = "Welcome! Enter a zip code, grid square, or lat,lon above, or press Find me."
+        err.color = ft.Colors.BLUE_GREY
     heard.call_field.value = s.callsign
     if start == 3:
         await swx_maybe()
@@ -338,10 +431,27 @@ async def main(page: ft.Page):
         await recompute()
     if heard.enabled and s.callsign:
         await heard.refresh()
+    async def ticker():
+        """Keep 'now' fresh while the app stays open."""
+        while True:
+            await asyncio.sleep(600)
+            try:
+                if s.has_location:
+                    await recompute()
+                if heard.enabled and s.callsign:
+                    await heard.maybe_refresh()
+            except Exception:
+                return                              # window closed
+
+    page.run_task(ticker)
     if os.environ.get("HFPROP_SCROLL"):          # developer aid for screenshots
         await asyncio.sleep(2)
         await views[start].scroll_to(offset=int(os.environ["HFPROP_SCROLL"]), duration=0)
 
 
-if __name__ == "__main__":
+def run():
     ft.run(main)
+
+
+if __name__ == "__main__":
+    run()

@@ -99,3 +99,16 @@ def parse_location(text):
         if abs(lat) <= 90 and abs(lon) <= 180:
             return lat, lon, latlon_to_grid(lat, lon)
     raise ValueError("Enter a zip code, grid square (FN31), or lat,lon (40.7,-74.0)")
+
+
+def locate_by_ip():
+    """Approximate (city-level) position from the public IP address. -> (lat, lon, label)."""
+    req = urllib.request.Request(
+        "https://ipwho.is/?fields=success,latitude,longitude,city,region_code,country_code",
+        headers={"User-Agent": "hfprop/0.1"})
+    with urllib.request.urlopen(req, timeout=10) as r:
+        d = json.load(r)
+    if not d.get("success"):
+        raise ValueError("Could not work out your location from your internet address")
+    place = ", ".join(x for x in (d.get("city"), d.get("region_code") or d.get("country_code")) if x)
+    return float(d["latitude"]), float(d["longitude"]), place or latlon_to_grid(d["latitude"], d["longitude"])

@@ -6,7 +6,7 @@ what you can reach, and a world map. Python, Flet UI. Linux first, Android secon
 
 ## Status
 - [x] Phase 0 - Core engine + CLI (`hfprop/`, 7 tests passing, live NOAA data)
-- [~] Phase 1 - Flet app (`app/main.py`): Home, Bands, Settings screens render with live data;
+- [~] Phase 1 - Flet app (`hfprop_app/`): Home, Bands, Settings screens render with live data;
       Map tab done (coastlines, day/night shading, sun point, targets coloured per band,
       tap a place for all bands to it, great-circle path). Interactions confirmed working by user.
       Heat map layer added (world reach grid per band, Places/Heat map toggle).
@@ -18,8 +18,12 @@ what you can reach, and a world map. Python, Flet UI. Linux first, Android secon
       comparing the model with real reports. Needs the user's callsign (Settings or the panel).
       One PSK request per 5 min (cached); filtering is local.
       24-hour 'Best times' band outlook grid added to the Bands tab.
-      Next: tune model against PSK data; alerts banner; Linux packaging; then Android, alerts banner, Linux packaging.
-      Run: `.venv/bin/python -m app.main` (`HFPROP_TAB=1` opens on a given tab).
+      Linux finish: Home alert banner + bands-open chips + next openings, Find me (IP), antenna
+      setting, 10-min auto-refresh, per-user installer + launcher/icon (packaging/), UI package
+      renamed hfprop_app.
+      Next: use it for a few days and tune the model against PSK data; then Android (emulator
+      'mushtest' already exists; tablet arriving), alerts banner, Linux packaging.
+      Run: `hfprop-app` or `.venv/bin/python -m hfprop_app` (`HFPROP_TAB=1` opens on a given tab).
 
 ## Phase 1 - Linux desktop app (Flet)
 Install Flet in the venv, build `app/main.py` using `hfprop` unchanged.

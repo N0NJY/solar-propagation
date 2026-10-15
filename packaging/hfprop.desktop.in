@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=HF Propagation
+Comment=HF propagation and space weather for hams and SWLs
+Exec=@EXEC@
+Icon=hfprop
+Terminal=false
+Categories=HamRadio;Network;Science;
+Keywords=ham;radio;propagation;HF;solar;space weather;

@@ -1,18 +1,38 @@
-# solar-propagation
+# HF Propagation
 
-Simple HF / ionospheric propagation prediction for ham radio operators and SWLs.
+HF / ionospheric propagation prediction and live space weather for ham radio operators and SWLs.
+Enter a zip code, grid square, or lat/long (or press *Find me*) and see what you can reach, right now
+and over the next 24 hours.
 
-Enter a zip code, grid square, or lat/long and get live space weather plus a band-by-band
-GO / MARGINAL / NO-GO table showing what you can reach from your location.
+* **Home** - alert banner (flares / storms), bands open right now, next openings, solar flux / Kp / X-ray.
+* **Bands** - 24-hour outlook grid and a GO / MARGINAL / NO-GO card per band (160m-6m) listing reachable regions.
+* **Map** - day/night world map with region dots, a heat map of where you can be heard, and real
+  PSK Reporter stations (who heard you, whom you heard) with mode / time / band filters and a
+  "prediction check" against reality.
+* **Space Wx** - NOAA R/S/G scales, solar wind and Bz, X-ray flares, Kp, CMEs (NOAA discussion + live
+  coronagraph), alerts.
+* **Settings** - mode, power, antenna, noise level, callsign. Defaults work; nothing is required.
 
-Python. Linux first, Android to follow. See [PLAN.md](PLAN.md) for the roadmap.
+Space weather comes from NOAA SWPC; real reports from PSK Reporter. The prediction model is an empirical
+estimate meant for planning, not a substitute for VOACAP.
 
-## Try it (command line)
+## Install (Linux)
 
-    python3 -m venv .venv && .venv/bin/pip install pytest
-    .venv/bin/python -m hfprop FN31
-    .venv/bin/python -m hfprop 90210 --hours 6 --mode cw --details
-    .venv/bin/python -m pytest
+    packaging/install.sh          # per-user install into ~/.local, adds an app-menu entry
+    hfprop-app                    # or launch "HF Propagation" from the menu
+    hfprop FN31                   # command-line version
+    packaging/uninstall.sh        # remove (settings in ~/.cache/hfprop are kept)
 
-Space weather comes from NOAA SWPC. The prediction model is empirical and meant for
-go/no-go planning, not a substitute for VOACAP.
+The first launch downloads the Flet window runtime, so it needs internet once.
+
+## Develop
+
+    python3 -m venv .venv && .venv/bin/pip install -e . pytest
+    .venv/bin/python -m hfprop_app        # run the app
+    .venv/bin/python -m pytest            # tests
+
+Layout: `hfprop/` is the dependency-free engine (propagation model, NOAA/PSK data, geometry);
+`hfprop_app/` is the Flet UI. Developer env vars: `HFPROP_TAB` (start tab 0-4), `HFPROP_CALL`,
+`HFPROP_DATA` (cache dir). See [PLAN.md](PLAN.md) for the roadmap (Android is next).
+
+Map data: Natural Earth (public domain).
