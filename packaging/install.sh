@@ -10,7 +10,9 @@ VENV="$PREFIX/share/hfprop/venv"
 echo "Installing into $PREFIX ..."
 python3 -m venv "$VENV"
 "$VENV/bin/pip" install --quiet --upgrade pip
-"$VENV/bin/pip" install --quiet "$SRC"
+rm -rf "$SRC/build"
+"$VENV/bin/pip" install --quiet "$SRC"                                   # dependencies
+"$VENV/bin/pip" install --quiet --force-reinstall --no-deps "$SRC"       # always replace our own code
 
 mkdir -p "$PREFIX/bin" "$PREFIX/share/applications" "$PREFIX/share/icons/hicolor/scalable/apps"
 ln -sf "$VENV/bin/hfprop-app" "$PREFIX/bin/hfprop-app"

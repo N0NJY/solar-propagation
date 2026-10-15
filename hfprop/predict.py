@@ -95,25 +95,36 @@ def target_bands(lat, lon, target, dt, sw, st=None):
     return out
 
 
-def reach_grid(lat, lon, freq, dt, sw, st=None, step=6):
-    """Reachability over the whole world for one frequency, for the map heat layer.
+def reach_grid(lat, lon, freq, dt, sw, st=None, step=6, bounds=None):
+    """Reachability for one frequency, for the map heat layer.
 
     Returns [(cell_lat, cell_lon, state, margin_db)] for every cell centre that is GO or
     MARGINAL. margin_db is the signal margin over what is needed (bigger = stronger).
+    `step` is the cell size in degrees; `bounds` = (lon_min, lat_min, lon_max, lat_max)
+    limits the work to the visible area. Cells are aligned to multiples of `step`, so they
+    do not shift while panning.
     """
     st = st or Station()
+    x0, y0, x1, y1 = bounds or (-180.0, -90.0, 180.0, 90.0)
+    x0, y0, x1, y1 = max(-180.0, x0), max(-90.0, y0), min(180.0, x1), min(90.0, y1)
     cells = []
-    half = step / 2.0
-    la = -90 + half
-    while la < 90:
-        lo = -180 + half
-        while lo < 180:
-            if distance_km(lat, lon, la, lo) >= 50:
-                state, snr, _ = link(lat, lon, la, lo, freq, dt, sw.ssn, sw.kp, sw.xray_flux, st)
-                if state != NOGO:
-                    cells.append((la, lo, state, snr - st.snr_needed))
-            lo += step
-        la += step
+    j = int(math.floor(y0 / step))
+    while True:
+        la = (j + 0.5) * step
+        if la - step / 2 > y1:
+            break
+        if -90 < la < 90:
+            i = int(math.floor(x0 / step))
+            while True:
+                lo = (i + 0.5) * step
+                if lo - step / 2 > x1:
+                    break
+                if -180 < lo < 180 and distance_km(lat, lon, la, lo) >= 50:
+                    state, snr, _ = link(lat, lon, la, lo, freq, dt, sw.ssn, sw.kp, sw.xray_flux, st)
+                    if state != NOGO:
+                        cells.append((la, lo, state, snr - st.snr_needed))
+                i += 1
+        j += 1
     return cells
 
 

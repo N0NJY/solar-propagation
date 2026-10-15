@@ -21,6 +21,9 @@ what you can reach, and a world map. Python, Flet UI. Linux first, Android secon
       Linux finish: Home alert banner + bands-open chips + next openings, Find me (IP), antenna
       setting, 10-min auto-refresh, per-user installer + launcher/icon (packaging/), UI package
       renamed hfprop_app.
+      Map upgrade: zoom/pan/pinch, Natural Earth 50m coastlines + lakes + countries + states/provinces +
+      cities (tools/make_geo.py), Maidenhead grid overlay, finer heat map when zoomed, scale bar;
+      metric/imperial units setting.
       Next: use it for a few days and tune the model against PSK data; then Android (emulator
       'mushtest' already exists; tablet arriving), alerts banner, Linux packaging.
       Run: `hfprop-app` or `.venv/bin/python -m hfprop_app` (`HFPROP_TAB=1` opens on a given tab).

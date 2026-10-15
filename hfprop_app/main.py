@@ -5,7 +5,7 @@ from datetime import datetime, timezone, timedelta
 
 import flet as ft
 
-from hfprop import geo, predict, settings as cfg, spaceweather, summary, swx
+from hfprop import geo, predict, settings as cfg, spaceweather, summary, swx, units
 from hfprop_app import spacewx
 from hfprop_app.heard import Heard
 from hfprop_app.mapview import MapView, STATE_FILL
@@ -46,8 +46,10 @@ async def main(page: ft.Page):
     page.window.width, page.window.height = 1000, 780
     page.window.min_width, page.window.min_height = 420, 560
     s = cfg.load()
-    if os.environ.get("HFPROP_CALL"):                 # developer aid
+    if os.environ.get("HFPROP_CALL"):                 # developer aids (not persisted unless you change a setting)
         s.callsign = os.environ["HFPROP_CALL"].upper()
+    if os.environ.get("HFPROP_DETAIL"):
+        s.map_detail = os.environ["HFPROP_DETAIL"].split(",")
     app = {"sw": None, "rows": None, "strip": None, "scales": None, "updated": None, "offset": 0, "band": "20m", "target": None}
 
     where = ft.TextField(label="Zip code, grid square (FN31), or lat,lon", value=s.where,
@@ -148,7 +150,7 @@ async def main(page: ft.Page):
                 dense=True, leading=ft.Icon(STATE_ICON["GO" if e in r["go"] else "MARGINAL"],
                                             color=STATE_COLOR["GO" if e in r["go"] else "MARGINAL"]),
                 title=ft.Text(e["target"]),
-                subtitle=ft.Text(f'{e["km"]:.0f} km  •  bearing {e["bearing"]:.0f}°  •  {e["hops"]} hop(s)'))
+                subtitle=ft.Text(f'{units.dist(e["km"], s.units)}  •  bearing {e["bearing"]:.0f}°  •  {e["hops"]} hop(s)'))
                 for e in reach] or [ft.ListTile(title=ft.Text("No reachable places on this band."))]
             bands.controls.append(ft.Card(content=ft.ExpansionTile(
                 leading=ft.Container(
@@ -208,6 +210,26 @@ async def main(page: ft.Page):
             page.run_task(heard.maybe_refresh)
 
     heard.enabled = mapview.show_heard = bool(s.callsign)
+    detail_opts = [("borders", "Countries"), ("states", "States / provinces"),
+                   ("cities", "Cities"), ("grid", "Grid squares")]
+    detail_row = ft.Row(wrap=True, spacing=6, run_spacing=4)
+
+    def apply_detail():
+        d = set(s.map_detail)
+        mapview.show_borders, mapview.show_states = "borders" in d, "states" in d
+        mapview.show_cities, mapview.show_grid = "cities" in d, "grid" in d
+        detail_row.controls = [ft.Text("Map detail:", size=13, opacity=0.7)] + [
+            ft.Chip(label=ft.Text(t), selected=k in d, show_checkmark=False,
+                    on_click=lambda e, k=k: detail_toggle(k)) for k, t in detail_opts]
+
+    def detail_toggle(key):
+        s.map_detail = sorted(set(s.map_detail) ^ {key})
+        cfg.save(s)
+        apply_detail()
+        mapview.draw()
+        page.update()
+
+    apply_detail()
     layers = ft.SegmentedButton(selected=["places", "heat"] + (["heard"] if s.callsign else []),
                                 allow_multiple_selection=True,
                                 allow_empty_selection=True, on_change=layers_change,
@@ -233,9 +255,12 @@ async def main(page: ft.Page):
         when = datetime.now(timezone.utc) + timedelta(hours=app["offset"])
         map_when.value = f'{app["band"]} - {row["overall"]} - {when:%Y-%m-%d %H:%M} UTC'
         freq = dict(predict.BANDS)[app["band"]]
-        heat = predict.reach_grid(s.lat, s.lon, freq, when, app["sw"], s.station(), mapview.heat_step)
-        mapview.set_data((s.lat, s.lon, s.label), when, states, app["target"], heat,
-                         heard.stations(app["band"]), heard.selected)
+        sw_now, station = app["sw"], s.station()
+        mapview.units = s.units
+        mapview.set_data(
+            (s.lat, s.lon, s.label), when, states, app["target"],
+            lambda bounds, step: predict.reach_grid(s.lat, s.lon, freq, when, sw_now, station, step, bounds),
+            heard.stations(app["band"]), heard.selected)
         heard.render()
         t = app["target"]
         target_row.controls.clear()
@@ -244,7 +269,7 @@ async def main(page: ft.Page):
             return
         d = geo.distance_km(s.lat, s.lon, t[2], t[3])
         b = geo.bearing_deg(s.lat, s.lon, t[2], t[3])
-        target_title.value = f"{t[0]}  -  {d:,.0f} km, bearing {b:.0f}\N{DEGREE SIGN}"
+        target_title.value = f"{t[0]}  -  {units.dist(d, s.units)}, bearing {b:.0f}\N{DEGREE SIGN}"
         for r in predict.target_bands(s.lat, s.lon, t, when, app["sw"], s.station()):
             target_row.controls.append(ft.Container(
                 padding=ft.Padding.symmetric(horizontal=10, vertical=6), border_radius=8,
@@ -347,12 +372,14 @@ async def main(page: ft.Page):
             pass
         s.noise = noise.value
         s.gain_dbi = float(antenna.value)
+        s.units = list(units_sel.selected)[0]
         cfg.save(s)
 
     async def apply_set(e):
         save_set()
         if s.has_location:
             await recompute()
+        page.run_task(swx_refresh)              # Space Wx page shows speeds in the chosen units
 
     mode = ft.SegmentedButton(selected=[s.mode], allow_empty_selection=False, on_change=apply_set,
                               segments=[ft.Segment(value=v, label=ft.Text(t)) for v, t in
@@ -380,8 +407,12 @@ async def main(page: ft.Page):
     gain_now = min(gains, key=lambda g: abs(g[0] - s.gain_dbi))[0]
     antenna = ft.Dropdown(label="Your antenna", value=str(gain_now), width=340, on_select=apply_set,
                           options=[ft.DropdownOption(key=str(g), text=t) for g, t in gains])
+    units_sel = ft.SegmentedButton(selected=[s.units], allow_empty_selection=False, on_change=apply_set,
+                                   segments=[ft.Segment(value="metric", label=ft.Text("Metric (km)")),
+                                             ft.Segment(value="imperial", label=ft.Text("Imperial (miles)"))])
     settings_view = ft.Column(scroll=ft.ScrollMode.AUTO, spacing=16, controls=[
         ft.Text("Defaults work fine - change these only if you want to.", opacity=0.7),
+        ft.Text("Units"), units_sel,
         ft.Text("Mode"), mode, power, antenna, noise, call,
         ft.Text("A callsign shows real stations that heard you on the map (PSK Reporter).", size=12, opacity=0.65),
         ft.Text("Predictions are an empirical estimate for planning, not a guarantee.", size=12, opacity=0.6)])
@@ -397,9 +428,9 @@ async def main(page: ft.Page):
                           "no color = not reachable.", size=12, opacity=0.65)
     map_view = ft.Column(scroll=ft.ScrollMode.AUTO, spacing=10, controls=[
         band_chips, ft.Row([map_when, layers], alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                            wrap=True), ft.Row([mapview.control], alignment=ft.MainAxisAlignment.CENTER), legend, legend_note, heard.control, target_title, target_row])
+                            wrap=True), detail_row, ft.Row([mapview.control], alignment=ft.MainAxisAlignment.CENTER), legend, legend_note, heard.control, target_title, target_row])
 
-    swx_view, swx_refresh, swx_maybe = spacewx.build(page)
+    swx_view, swx_refresh, swx_maybe = spacewx.build(page, lambda: False, lambda: s.units)
     views = [home, bands_view, map_view, swx_view, settings_view]
     start = int(os.environ.get("HFPROP_TAB", "0"))   # developer aid: open on a given tab
     body = ft.Container(content=views[start], padding=16, expand=True)
@@ -444,6 +475,8 @@ async def main(page: ft.Page):
                 return                              # window closed
 
     page.run_task(ticker)
+    if os.environ.get("HFPROP_ZOOM"):            # developer aid: start zoomed in on your location
+        mapview.zoom_to_me(float(os.environ["HFPROP_ZOOM"]))
     if os.environ.get("HFPROP_SCROLL"):          # developer aid for screenshots
         await asyncio.sleep(2)
         await views[start].scroll_to(offset=int(os.environ["HFPROP_SCROLL"]), duration=0)

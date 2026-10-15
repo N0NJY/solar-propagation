@@ -4,7 +4,7 @@ import time
 
 import flet as ft
 
-from hfprop import psk
+from hfprop import psk, units
 
 WINDOWS = [(1800, "30 min"), (3600, "1 hour"), (10800, "3 hours"), (21600, "6 hours"), (86400, "24 hours")]
 C_ME, C_THEM, C_BOTH = "#1b6fd8", "#8e44c8", "#0a9e96"
@@ -158,7 +158,7 @@ class Heard:
             if ag["misses"]:
                 self.check.controls.append(ft.ExpansionTile(
                     title=ft.Text(f"{len(ag['misses'])} heard but predicted closed", size=12),
-                    controls=[ft.Text(f"{m['call']}  {m['band']} {m['mode']}  {m['km']:,.0f} km  (model MUF {m['muf']:.1f} MHz)",
+                    controls=[ft.Text(f"{m['call']}  {m['band']} {m['mode']}  {units.dist(m['km'], s.units)}  (model MUF {m['muf']:.1f} MHz)",
                                       size=12) for m in ag["misses"][:15]]))
         tiles = []
         for x in stations[:25]:
@@ -167,7 +167,7 @@ class Heard:
                 dense=True, selected=sel, on_click=lambda e, c=x["call"]: self.pick(c),
                 leading=ft.Container(width=14, height=14, bgcolor=station_color(x), border_radius=2),
                 title=ft.Text(f"{x['call']}   {x['grid']}", size=13, weight=ft.FontWeight.W_600),
-                subtitle=ft.Text(f"{x['km']:,.0f} km, {x['bearing']:.0f}\N{DEGREE SIGN}  -  {', '.join(x['bands'])}  -  "
+                subtitle=ft.Text(f"{units.dist(x['km'], s.units)}, {x['bearing']:.0f}\N{DEGREE SIGN}  -  {', '.join(x['bands'])}  -  "
                                  f"{', '.join(x['modes'])}  -  best SNR {x['best_snr'] if x['best_snr'] is not None else '?'} dB  -  "
                                  f"{ago(self._now() - x['last'])}", size=11)))
         self.listing.controls = tiles

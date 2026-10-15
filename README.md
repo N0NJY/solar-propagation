@@ -6,12 +6,13 @@ and over the next 24 hours.
 
 * **Home** - alert banner (flares / storms), bands open right now, next openings, solar flux / Kp / X-ray.
 * **Bands** - 24-hour outlook grid and a GO / MARGINAL / NO-GO card per band (160m-6m) listing reachable regions.
-* **Map** - day/night world map with region dots, a heat map of where you can be heard, and real
+* **Map** - zoomable (wheel / drag / pinch / buttons) day/night world map with selectable detail
+  (countries, states & provinces, cities, Maidenhead grid squares), region dots, a heat map of where you can be heard, and real
   PSK Reporter stations (who heard you, whom you heard) with mode / time / band filters and a
   "prediction check" against reality.
 * **Space Wx** - NOAA R/S/G scales, solar wind and Bz, X-ray flares, Kp, CMEs (NOAA discussion + live
   coronagraph), alerts.
-* **Settings** - mode, power, antenna, noise level, callsign. Defaults work; nothing is required.
+* **Settings** - metric / imperial units, mode, power, antenna, noise level, callsign. Defaults work; nothing is required.
 
 Space weather comes from NOAA SWPC; real reports from PSK Reporter. The prediction model is an empirical
 estimate meant for planning, not a substitute for VOACAP.

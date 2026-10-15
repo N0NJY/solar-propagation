@@ -1,6 +1,6 @@
 """User settings and last location, persisted as JSON in the cache dir."""
 import json
-from dataclasses import dataclass, asdict, fields
+from dataclasses import dataclass, asdict, field, fields
 
 from .storage import cache_path
 
@@ -16,6 +16,8 @@ class Settings:
     noise: str = "residential"   # quiet | residential | city
     gain_dbi: float = 0.0
     callsign: str = ""          # optional; enables PSK Reporter 'heard recently'
+    units: str = "metric"        # metric | imperial
+    map_detail: list = field(default_factory=lambda: ["borders", "states", "cities"])
 
     @property
     def has_location(self):

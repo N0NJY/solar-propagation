@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 import flet as ft
 import flet.canvas as cv
 
-from hfprop import swx
+from hfprop import swx, units
 
 LEVEL_COLOR = ["#2e9e4f", "#c9b200", "#e08a00", "#e0600b", "#d63b2f", "#a8122a"]
 SCALE_NAME = {"R": "Radio blackouts", "S": "Radiation storms", "G": "Geomagnetic storms"}
@@ -169,7 +169,7 @@ def hf_impact(d):
     return out or ["No space-weather disturbances right now: HF conditions follow the normal solar-flux pattern."]
 
 
-def build(page: ft.Page, get_offline=lambda: False):
+def build(page: ft.Page, get_offline=lambda: False, get_units=lambda: "metric"):
     """Returns (control, refresh_coro, maybe_refresh_coro)."""
     state = {"t": 0.0, "busy": False}
     status = ft.Text(size=12, opacity=0.65)
@@ -207,7 +207,7 @@ def build(page: ft.Page, get_offline=lambda: False):
                 return LEVEL_COLOR[0] if v < good else LEVEL_COLOR[1] if v < warn else LEVEL_COLOR[4]
             sp, de, bt, bz = last.get("speed"), last.get("density"), last.get("bt"), last.get("bz")
             wind_row.controls = [
-                stat("Speed", f"{sp:.0f} km/s" if sp else "-", "solar wind", col(sp or 0, 450, 600)),
+                stat("Speed", units.speed(sp, get_units()) if sp else "-", "solar wind", col(sp or 0, 450, 600)),
                 stat("Density", f"{de:.1f} /cm³" if de else "-", "protons", None),
                 stat("Bt", f"{bt:.1f} nT" if bt else "-", "field strength", None),
                 stat("Bz", f"{bz:+.1f} nT" if bz is not None else "-", "south (-) is geoeffective",
