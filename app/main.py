@@ -104,6 +104,18 @@ async def main(page: ft.Page):
 
     mapview = MapView(on_pick=pick_target)
 
+    def fit_map(e=None):
+        """Size the 2:1 map to fit the window so the whole map and its legend are visible."""
+        w, h = page.width or 1000, page.height or 700
+        mapview.control.width = max(300, min(w - 32, 2 * (h - 270)))
+        mapview.control.height = mapview.control.width / 2
+        try:
+            page.update()
+        except Exception:
+            pass
+
+    page.on_resize = fit_map
+
     def layers_change(e):
         sel = set(e.control.selected)
         mapview.show_dots, mapview.show_heat = "places" in sel, "heat" in sel
@@ -249,7 +261,7 @@ async def main(page: ft.Page):
                           "no color = not reachable.", size=12, opacity=0.65)
     map_view = ft.Column(scroll=ft.ScrollMode.AUTO, spacing=10, controls=[
         band_chips, ft.Row([map_when, layers], alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                            wrap=True), mapview.control, legend, legend_note, target_title, target_row])
+                            wrap=True), ft.Row([mapview.control], alignment=ft.MainAxisAlignment.CENTER), legend, legend_note, target_title, target_row])
 
     views = [home, bands_view, map_view, settings_view]
     start = int(os.environ.get("HFPROP_TAB", "0"))   # developer aid: open on a given tab
@@ -266,6 +278,7 @@ async def main(page: ft.Page):
         ft.NavigationBarDestination(icon=ft.Icons.TUNE, label="Settings")])
     page.add(ft.SafeArea(expand=True, content=body))
 
+    fit_map()
     if s.has_location:
         await recompute()
 

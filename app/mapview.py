@@ -37,7 +37,7 @@ class MapView:
         self._land_shapes = []
         self.canvas = cv.Canvas(shapes=[], on_resize=self._resize, expand=True)
         self.control = ft.Container(
-            aspect_ratio=2, bgcolor=OCEAN, border_radius=10, clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
+            width=1000, height=500, bgcolor=OCEAN, border_radius=10, clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
             content=ft.GestureDetector(content=self.canvas, on_tap_down=self._tap))
 
     # --- projection (equirectangular; container is locked to 2:1) ---
@@ -48,6 +48,8 @@ class MapView:
         return (90.0 - lat) / 180.0 * self.h
 
     def _resize(self, e):
+        if not (0 < e.width < 1e5 and 0 < e.height < 1e5):   # layout pass can report inf/0
+            return
         self.w, self.h = e.width, e.height
         self.draw()
 
@@ -82,6 +84,39 @@ class MapView:
                 shapes.append(cv.Path(els, paint=_fill(LAND)))
             self._land_key, self._land_shapes = key, shapes
         return self._land_shapes
+
+    def _legend(self):
+        """Compact key in the bottom-left corner; skipped when the map is too small for it."""
+        bw, bh = 232, 104
+        if self.w < bw * 1.6 or self.h < bh * 2:
+            return []
+        x0, y0 = 10, self.h - bh - 10
+        ink = ft.TextStyle(size=11, color="#10233f")
+        bold = ft.TextStyle(size=11, weight=ft.FontWeight.BOLD, color="#10233f")
+        out = [cv.Rect(x0, y0, bw, bh, border_radius=8, paint=_fill("#ffffff", 0.86))]
+
+        def dot(x, y, color, label, r=5):
+            out.append(cv.Circle(x, y + 7, r, _fill(color)))
+            out.append(cv.Circle(x, y + 7, r, _stroke("#ffffff", 1.0)))
+            out.append(cv.Text(x + 9, y, label, ink))
+
+        def box(x, y, color, alpha, label):
+            out.append(cv.Rect(x - 5, y + 2, 10, 10, paint=_fill(color, alpha)))
+            out.append(cv.Text(x + 9, y, label, ink))
+
+        out.append(cv.Text(x0 + 10, y0 + 8, "Dots = regions, not stations", bold))
+        dot(x0 + 16, y0 + 28, STATE_FILL["GO"], "Good")
+        dot(x0 + 70, y0 + 28, STATE_FILL["MARGINAL"], "Marginal")
+        dot(x0 + 138, y0 + 28, STATE_FILL["NO-GO"], "Not reachable")
+        out.append(cv.Text(x0 + 10, y0 + 50, "Shading = signal strength", bold))
+        box(x0 + 16, y0 + 68, "#1f9d4a", 0.65, "Strong")
+        box(x0 + 78, y0 + 68, "#1f9d4a", 0.30, "Weak")
+        box(x0 + 128, y0 + 68, "#f0a000", 0.42, "Marginal")
+        dot(x0 + 16, y0 + 86, "#d6246e", "You", 4)
+        dot(x0 + 62, y0 + 86, "#ffd400", "Sun overhead", 4)
+        out.append(cv.Rect(x0 + 146, y0 + 89, 10, 10, paint=_fill("#0b1d3a", 0.5)))
+        out.append(cv.Text(x0 + 160, y0 + 86, "Night", ink))
+        return out
 
     def draw(self):
         if not self.w or not self.h:
@@ -133,6 +168,7 @@ class MapView:
             shapes.append(cv.Circle(x, y, r + 2, _stroke("#ffffff", 2.0)))
             shapes.append(cv.Text(x + r + 5, y - 7, "You", ft.TextStyle(size=12, weight=ft.FontWeight.BOLD,
                                                                        color="#7d0f3e")))
+        shapes += self._legend()
         self.canvas.shapes = shapes
         try:
             self.canvas.update()
