@@ -32,4 +32,4 @@ org = "com.n0njy"
 copyright = "HF Propagation"
 
 [tool.flet.app]
-exclude = ["tests", "packaging", "tools", "PLAN.md", "README.md", ".git", ".github"]
+exclude = ["tests", "packaging", "tools", "docs", "PLAN.md", "README.md", ".git", ".github"]
