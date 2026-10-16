@@ -30,6 +30,7 @@ jobs:
     env:
       PYTHONUTF8: "1"            # Windows' default console encoding cannot print the build tool's symbols
       PYTHONIOENCODING: utf-8
+      FLET_CLI_NO_RICH_OUTPUT: "1"   # plain text: the build tool's emoji sometimes crash the Windows log writer
     steps:
       - uses: actions/checkout@v4
 
