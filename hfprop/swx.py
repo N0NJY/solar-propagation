@@ -118,6 +118,12 @@ def parse_wind(mag, wind):
     return [{"t": t, **v} for t, v in sorted(by_t.items())]
 
 
+def latest(wind, key):
+    """Newest value of `key` in a solar-wind series. The plasma fields (speed, density) arrive a minute or
+    two after the magnetic field, so the very last point often lacks them."""
+    return next((w[key] for w in reversed(wind or []) if w.get(key) is not None), None)
+
+
 def get_solar_wind(offline=False):
     def fetch():
         return parse_wind(_head_objects("json/rtsw/rtsw_mag_1m.json", 90000),

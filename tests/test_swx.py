@@ -65,3 +65,10 @@ def test_cache_falls_back_to_stale_data_when_offline(tmp_path, monkeypatch):
     data, age = swx._cached("demo", boom)
     assert data == {"ok": True} and age > 1000
     assert swx._cached("missing", boom) == (None, None)
+
+
+def test_latest_skips_missing_plasma_fields():
+    wind = [{"t": "a", "bz": -3.0, "speed": 450.0}, {"t": "b", "bz": -4.0, "bt": 5.0}]
+    assert swx.latest(wind, "speed") == 450.0
+    assert swx.latest(wind, "bz") == -4.0
+    assert swx.latest(wind, "density") is None and swx.latest([], "bz") is None

@@ -412,7 +412,7 @@ async def main(page: ft.Page):
     gains = [(-6.0, "Compromise / indoor / loaded (-6 dBi)"), (-2.0, "Vertical or ground-mounted (-2 dBi)"),
              (0.0, "Dipole or wire (0 dBi)"), (6.0, "Small beam (+6 dBi)"), (11.0, "Large beam (+11 dBi)")]
     gain_now = min(gains, key=lambda g: abs(g[0] - s.gain_dbi))[0]
-    antenna = ft.Dropdown(label="Your antenna", value=str(gain_now), width=340, on_select=apply_set,
+    antenna = ft.Dropdown(label="Your antenna", value=str(gain_now), width=440, on_select=apply_set,
                           options=[ft.DropdownOption(key=str(g), text=t) for g, t in gains])
     units_sel = ft.SegmentedButton(selected=[s.units], allow_empty_selection=False, on_change=apply_set,
                                    segments=[ft.Segment(value="metric", label=ft.Text("Metric (km)")),

@@ -155,12 +155,12 @@ def hf_impact(d):
         if max(sc["day1"]["G"], sc["day2"]["G"], sc["day3"]["G"]) >= 1 and g == 0:
             out.append("NOAA forecasts a geomagnetic storm in the next 3 days.")
     if wind:
-        last = wind[-1]
-        if last.get("bz") is not None and last["bz"] <= -10:
+        bz, speed = swx.latest(wind, "bz"), swx.latest(wind, "speed")
+        if bz is not None and bz <= -10:
             out.append("Strong southward Bz: geomagnetic activity may rise soon; high-latitude HF paths can degrade.")
-        elif last.get("bz") is not None and last["bz"] <= -5:
+        elif bz is not None and bz <= -5:
             out.append("Bz is southward: watch for rising geomagnetic activity.")
-        if last.get("speed") and last["speed"] >= 600:
+        if speed and speed >= 600:
             out.append("Fast solar wind (>=600 km/s): disturbed polar and auroral paths likely.")
     if kp:
         obs = [r for r in kp if r["observed"]]
@@ -205,7 +205,7 @@ def build(page: ft.Page, get_offline=lambda: False, get_units=lambda: "metric"):
             last = wind[-1]
             def col(v, good, warn):
                 return LEVEL_COLOR[0] if v < good else LEVEL_COLOR[1] if v < warn else LEVEL_COLOR[4]
-            sp, de, bt, bz = last.get("speed"), last.get("density"), last.get("bt"), last.get("bz")
+            sp, de, bt, bz = (swx.latest(wind, k) for k in ("speed", "density", "bt", "bz"))
             wind_row.controls = [
                 stat("Speed", units.speed(sp, get_units()) if sp else "-", "solar wind", col(sp or 0, 450, 600)),
                 stat("Density", f"{de:.1f} /cm³" if de else "-", "protons", None),
