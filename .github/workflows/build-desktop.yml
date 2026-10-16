@@ -1,0 +1,68 @@
+name: Build Windows and macOS apps
+
+# Builds the desktop apps on GitHub's own Windows and macOS machines (they cannot be built on Linux).
+# Run it from the Actions tab ("Run workflow"). Give it a release tag, for example v1.0.0, to also attach the
+# finished zip files to that release; leave the tag empty to just build and keep them as downloadable artifacts.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to attach the builds to (optional, e.g. v1.0.0)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: windows
+            name: windows-x64
+          - os: macos-latest
+            target: macos
+            name: macos
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Flet build tools
+        run: python -m pip install --upgrade pip "flet[cli]>=1.0,<2"
+
+      - name: Build
+        run: flet build ${{ matrix.target }} --yes -v
+
+      - name: Package (Windows)
+        if: matrix.target == 'windows'
+        shell: pwsh
+        run: |
+          $version = (Select-String -Path pyproject.toml -Pattern '^version = "(.+)"').Matches[0].Groups[1].Value
+          Compress-Archive -Path build/windows/* -DestinationPath "hfprop-$version-${{ matrix.name }}.zip"
+
+      - name: Package (macOS)
+        if: matrix.target == 'macos'
+        run: |
+          version=$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml)
+          app=$(ls -d build/macos/*.app | head -1)
+          ditto -c -k --sequesterRsrc --keepParent "$app" "hfprop-$version-${{ matrix.name }}.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hfprop-${{ matrix.name }}
+          path: hfprop-*.zip
+          if-no-files-found: error
+
+      - name: Attach to release
+        if: inputs.tag != ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ inputs.tag }}" hfprop-*.zip --clobber
