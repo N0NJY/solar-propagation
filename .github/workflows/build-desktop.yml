@@ -27,6 +27,9 @@ jobs:
             target: macos
             name: macos
     runs-on: ${{ matrix.os }}
+    env:
+      PYTHONUTF8: "1"            # Windows' default console encoding cannot print the build tool's symbols
+      PYTHONIOENCODING: utf-8
     steps:
       - uses: actions/checkout@v4
 
