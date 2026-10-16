@@ -77,6 +77,13 @@ For a smaller file, add `--split-per-abi`.
    release with `gh release create vVERSION ... --notes-file ...`.
 5. Update the version in the download links in `docs/Install-on-Android.md`.
 
+## Windows and macOS builds
+
+These cannot be built on Linux. The workflow `.github/workflows/build-desktop.yml` builds them on GitHub's own Windows and
+macOS machines. Run it from the repository's **Actions** tab (*Build Windows and macOS apps*, then *Run workflow*). Enter a release tag such as
+`v1.0.0` to attach the zip files to that release, or leave it empty to keep them as downloadable artifacts. The builds are
+unsigned, and the macOS one is Apple Silicon only. Both are untested on real hardware.
+
 ## Design notes worth knowing
 
 * **Display cost is per shape, not per point.** The map merges every layer into a single path (and dots into one

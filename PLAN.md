@@ -1,92 +1,46 @@
-# HF Propagation App - Plan
+# HF Propagation - Plan and status
 
-Goal: a simple HF/ionospheric propagation tool for hams and SWLs. Enter a zip code,
-grid square, or lat/long and see live space weather, band-by-band GO / MARGINAL / NO-GO,
-what you can reach, and a world map. Python, Flet UI. Linux first, Android second.
+Goal: a simple HF / ionospheric propagation tool for hams and SWLs. Enter a zip code, grid square, or lat/long and see
+live space weather, band-by-band GO / MARGINAL / NO-GO, what you can reach, and a world map. Python, Flet UI,
+dependency-free engine (`hfprop/`) so it runs anywhere. Open source under the MIT licence.
 
-## Status
-- [x] Phase 0 - Core engine + CLI (`hfprop/`, 7 tests passing, live NOAA data)
-- [~] Phase 1 - Flet app (`hfprop_app/`): Home, Bands, Settings screens render with live data;
-      Map tab done (coastlines, day/night shading, sun point, targets coloured per band,
-      tap a place for all bands to it, great-circle path). Interactions confirmed working by user.
-      Heat map layer added (world reach grid per band, Places/Heat map toggle).
-      Space Wx page added (NOAA scales, solar wind + Bz chart, X-ray chart, flare odds, Kp bars,
-      CME note + live LASCO/Enlil images, alerts, forecast discussion). NASA DONKI is currently
-      unavailable (API redirects), so CMEs come from NOAA's discussion + imagery.
-      PSK Reporter 'Heard' layer added: real reports (they heard me / I heard them) as squares
-      on the map, filters for window/direction/mode/band, station list, and a 'prediction check'
-      comparing the model with real reports. Needs the user's callsign (Settings or the panel).
-      One PSK request per 5 min (cached); filtering is local.
-      24-hour 'Best times' band outlook grid added to the Bands tab.
-      Linux finish: Home alert banner + bands-open chips + next openings, Find me (IP), antenna
-      setting, 10-min auto-refresh, per-user installer + launcher/icon (packaging/), UI package
-      renamed hfprop_app.
-      Map upgrade: zoom/pan/pinch, Natural Earth 50m coastlines + lakes + countries + states/provinces +
-      cities (tools/make_geo.py), Maidenhead grid overlay, finer heat map when zoomed, scale bar;
-      metric/imperial units setting.
-      Next: use it for a few days and tune the model against PSK data; then Android (emulator
-      'mushtest' already exists; tablet arriving), alerts banner, Linux packaging.
-      Run: `hfprop-app` or `.venv/bin/python -m hfprop_app` (`HFPROP_TAB=1` opens on a given tab).
+## Status (version 1.0.0)
 
-## Phase 1 - Linux desktop app (Flet)
-Install Flet in the venv, build `app/main.py` using `hfprop` unchanged.
-Fetching and prediction run off the UI thread so the window never freezes.
+| Platform | Status |
+|---|---|
+| Android | Released (signed APKs on GitHub Releases, tested on a Samsung tablet) |
+| Linux | Works (per-user installer). Tested on x86-64 |
+| Raspberry Pi | Works on 64-bit Raspberry Pi OS, including Bullseye with Python 3.12 from `uv` |
+| Windows | Builds on GitHub Actions. **Untested** on real hardware |
+| macOS | Builds on GitHub Actions (Apple Silicon, unsigned). **Untested** on real hardware |
 
-Screens (bottom/top tabs; same layout scales to a tablet):
-1. **Home**: one input box (zip / grid / lat,lon), "Use my location" and "Go" buttons.
-   Remember the last location. Below it, live tiles: SFI, SSN, Kp, A, X-ray, each coloured
-   and with the plain-English line from `spaceweather.summarize`. Shows data age / offline badge.
-2. **Bands**: 160m-6m table, big colour chip per band (GO green / MARGINAL amber / NO-GO red),
-   count of reachable places, tap a row to list them with distance, bearing, and signal quality.
-   Time selector: Now / +3h / +6h / +12h / +24h, plus a 24-hour strip per band (open hours).
-3. **Map**: world map with day/night shading, your marker, DX targets coloured for the
-   selected band; tap a place for the band list to it. Band selector chips above the map.
-4. **Settings** (kept small): power, mode (SSB/CW/Digital), noise (quiet/residential/city),
-   antenna gain. Sensible defaults so no input is ever required.
+Features: Home (alerts, bands open now, next openings), Bands (24-hour outlook, per-band cards), Map (zoom/pan/pinch,
+detail layers, heat map, Maidenhead grid, real PSK Reporter stations), Stations page, Space Wx (NOAA scales, solar wind,
+flares, Kp, CMEs, alerts), Settings (units, mode, power, antenna, noise, callsign), 10-minute auto refresh, offline cache.
 
-Support work:
-- [ ] Simplified world coastline data (Natural Earth 110m, converted to a small bundled
-      JSON) - no cartopy/matplotlib so it ports to Android.
-- [ ] Equirectangular map drawn on a Flet canvas; terminator from `solar.terminator_lat`.
-- [ ] 24-hour band-open grid in `predict.py` (`band_day_strip`).
-- [ ] Coverage grid for the map (`predict.reach_grid(band)`, ~10 degree cells, cached per minute).
-- [ ] Alerts: flare / storm banners driven by X-ray class and Kp.
-- [ ] Settings + last location persisted via `storage.py`.
-- [ ] Linux packaging: `flet build linux` and a desktop launcher.
+## Next
 
-## Phase 2 - Validate and tune the model
-- [ ] Compare predictions with real data: PSK Reporter spots near the user's grid, WSPR
-      spots, and NOAA/GIRO ionosonde foF2. Log mismatches, adjust `iono.py` constants.
-- [ ] Known weak spots: 160m too optimistic, no sporadic-E (6m/10m summer), simplistic
-      high-latitude/auroral handling, antenna model is a flat dBi figure.
-- [ ] Optional upgrade: pure-Python IRI (e.g. pyIRI) behind the same `fof2()` interface;
-      ionosonde-corrected foF2 near the user's location.
+- [ ] Test the Windows build on a real PC, then attach it to a release with an install page
+- [ ] Test the macOS build (needs a Mac user); consider an Intel build and signing
+- [ ] Validate and tune the model against PSK Reporter data (see below)
+- [ ] App icon and store listing if it is ever put on Google Play
+- [ ] Bundle a US zip table so the first run works fully offline
+- [ ] Optional: UTC / local time display setting; notifications when a band opens
 
-## Phase 3 - Android
-Tablet arrives; connect via USB and use for development.
-- [ ] Prereqs on the Linux dev box: JDK 17, Android SDK/platform-tools, `adb`; enable
-      developer options + USB debugging on the tablet; confirm with `adb devices`.
-- [ ] Hot-reload dev loop: run the Flet app on the Linux box and view it on the tablet
-      (Flet companion app), so UI iteration doesn't need a rebuild each time.
-- [ ] `flet build apk`; fix anything platform-specific:
-  - `HFPROP_DATA` set to the app's private storage dir (cache path).
-  - "Use my location" via the device GPS (Flet geolocator).
-  - Touch targets, responsive layout, portrait + landscape.
-  - Network permission in the manifest; confirm the cache works when offline.
-- [ ] Verify we only depend on pure-Python packages (hfprop has no third-party deps).
-- [ ] App icon, name, version; signed release build.
+## Validate and tune the model
 
-## Phase 4 - Later / nice to have
-Windows and macOS builds (Flet supports both), PSK Reporter live overlay, notifications when
-a band opens, Maidenhead grid on the map, great-circle path view, ITU-R P.533-style upgrade.
+The "prediction check" on the Stations page compares the model with real reports. Use it for a few weeks, note the mismatches,
+and adjust `hfprop/iono.py` and `hfprop/predict.py`.
+
+Known weak spots: 160 m is too optimistic, no sporadic E (summer 6 m and 10 m), high-latitude and auroral paths are crude,
+the antenna is a single gain number, and each region is one representative point.
+
+Possible upgrade: a pure-Python IRI (for example pyIRI) behind the same `fof2()` interface, or ionosonde-corrected foF2 near the user.
 
 ## Decisions made
-- Python + Flet for UI, `hfprop` stays dependency-free.
-- GO/NO-GO is relative to the user's location, per band, per reachable place.
-- Minimal input: location only; everything else defaults.
-- Linux first, Android second (tablet as the dev/test device).
 
-## Open items
-- Confirm Flet version and Android build requirements against current Flet docs at the
-  start of Phase 3 (the tooling changes quickly).
-- Decide whether non-US zip codes matter (currently US zip only; grid and lat/long work anywhere).
+- Python + Flet for the UI. `hfprop` stays dependency-free.
+- GO / NO-GO is relative to the user's location, per band, per reachable region.
+- Minimal input: location only; everything else has defaults. The callsign starts as `NOCALL` and is never looked up.
+- MIT licence, open source. Selling it is on hold (see docs/Selling-It.md).
+- Android releases are signed with a key kept outside the repository. The same key must be used for every update.

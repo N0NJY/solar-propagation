@@ -49,6 +49,23 @@ runtime, so the Pi needs internet. If it complains about a missing library, inst
 stops with a clear message if it finds an old Python or a 32-bit system. It has been confirmed working on a 64-bit Raspberry Pi running Debian 11 "Bullseye" with Python 3.12 from `uv`. If you hit a problem on yours, please report it at
 https://github.com/N0NJY/solar-propagation/issues.
 
+## Windows and macOS (untested)
+
+Windows and macOS versions can be built, but **they have not been run on a real Windows or Mac computer yet**, so
+there is no download for them and nothing here is guaranteed. If you want to try:
+
+1. Open https://github.com/N0NJY/solar-propagation/actions and click the newest successful run of
+   **Build Windows and macOS apps**. (You need to be logged in to GitHub to download from it.)
+2. Under **Artifacts**, download `hfprop-windows-x64` or `hfprop-macos`.
+3. **Windows:** unzip it twice (the download is a zip containing the real zip), open the folder and run `hfprop.exe`.
+   Windows SmartScreen will say "Windows protected your PC" because the app is not code-signed: click **More info**, then
+   **Run anyway**.
+4. **macOS:** unzip it. It is built for Apple Silicon Macs (M1 and newer) and is not signed, so macOS will refuse to
+   open it normally. Right-click the app, choose **Open**, then **Open** again. It is unlikely to run on older Intel Macs.
+
+Please report what happens, good or bad, at https://github.com/N0NJY/solar-propagation/issues, and which Windows or macOS
+version you used. Until a few people confirm it works, treat these builds as experimental.
+
 ## Android
 
 Download the app file from the releases page and tap it. No computer is needed. Follow the step-by-step guide:

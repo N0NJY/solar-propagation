@@ -76,4 +76,4 @@ Press and hold the app icon, then choose **Uninstall**, or use Settings, Apps, H
 | It opens but shows no data | Check the internet connection, then open the **Space Wx** page and press the refresh button |
 | Anything else | See [Troubleshooting](Troubleshooting.md), or open an issue at https://github.com/N0NJY/solar-propagation/issues |
 
-Windows and macOS builds are planned but not available yet. Linux users: see [Getting Started](Getting-Started.md).
+Windows and macOS builds exist but are untested and not published as downloads. Linux and Raspberry Pi users: see [Getting Started](Getting-Started.md).
