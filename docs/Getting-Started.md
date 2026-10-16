@@ -17,15 +17,15 @@ Remove it with `packaging/uninstall.sh`. Your settings in `~/.cache/hfprop` are 
 
 ### Raspberry Pi (64-bit OS only)
 
-It works on a Raspberry Pi 3, 4 or 5 only if the operating system is **64-bit** and recent. Two checks first, because
-`uname -m` alone is not enough (a 32-bit Pi OS on a 64-bit kernel also says `aarch64`):
+It works on a Raspberry Pi 3, 4 or 5 only if the operating system is **64-bit**. The window toolkit also needs
+**Python 3.10 or newer**. Check both:
 
     dpkg --print-architecture      # must say arm64   (armhf means 32-bit: not supported)
-    python3 --version              # must be 3.10 or newer (Debian 12 "Bookworm" has 3.11)
-    cat /etc/os-release | head -2  # Debian 12 or newer
+    python3 --version              # 3.10 or newer (Debian 12 "Bookworm" has 3.11)
 
-If either check fails, install the current **64-bit Raspberry Pi OS** (Raspberry Pi Imager, choose "Raspberry Pi OS (64-bit)").
-The installer also stops with a clear message if it finds an old Python or a 32-bit system. When the checks pass:
+(`uname -m` alone is not enough: a 32-bit Pi OS on a 64-bit kernel also says `aarch64`.)
+
+**If Python is 3.10 or newer** (Raspberry Pi OS Bookworm or later):
 
     sudo apt update
     sudo apt install git python3-venv libgtk-3-0
@@ -33,9 +33,21 @@ The installer also stops with a clear message if it finds an old Python or a 32-
     cd solar-propagation
     packaging/install.sh
 
-If it complains about a missing library when it starts, install the package it names. Only the Pi's browser-free
-command-line version (`hfprop FN31`) works on older systems, because that part needs nothing but Python 3.10.
-This route has not been tested on a Pi yet, so please report what happens at https://github.com/N0NJY/solar-propagation/issues.
+**If Python is older** (Raspberry Pi OS Bullseye has 3.9), either install the current 64-bit Raspberry Pi OS with Raspberry
+Pi Imager (the cleanest fix), or keep your system and add a newer Python next to it with the `uv` tool, without touching
+the system Python:
+
+    sudo apt install git python3-venv libgtk-3-0 curl
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    ~/.local/bin/uv python install 3.12
+    git clone https://github.com/N0NJY/solar-propagation.git
+    cd solar-propagation
+    PYTHON=$(~/.local/bin/uv python find 3.12) packaging/install.sh
+
+Then start it from the menu ("HF Propagation") or run `~/.local/bin/hfprop-app`. The first start downloads the window
+runtime, so the Pi needs internet. If it complains about a missing library, install the package it names. The installer
+stops with a clear message if it finds an old Python or a 32-bit system. This route has not been tested on a Pi yet, so
+please report what happens at https://github.com/N0NJY/solar-propagation/issues.
 
 ## Android
 

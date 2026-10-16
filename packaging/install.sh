@@ -2,15 +2,17 @@
 # Install HF Propagation for the current user (no root needed).
 #   packaging/install.sh            -> ~/.local
 #   HFPROP_PREFIX=/opt/x packaging/install.sh
+#   PYTHON=/path/to/python3.12 packaging/install.sh      # use a specific Python (needs 3.10 or newer)
 set -euo pipefail
+PY="${PYTHON:-python3}"
 PREFIX="${HFPROP_PREFIX:-$HOME/.local}"
 SRC="$(cd "$(dirname "$0")/.." && pwd)"
 VENV="$PREFIX/share/hfprop/venv"
 
 # Friendly checks before installing (the window toolkit needs Python 3.10+ and, on ARM, a 64-bit system)
-if ! python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)' 2>/dev/null; then
-  echo "This needs Python 3.10 or newer; found: $(python3 --version 2>&1)."
-  echo "On Raspberry Pi OS that means Debian 12 'Bookworm' or newer."
+if ! "$PY" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)' 2>/dev/null; then
+  echo "This needs Python 3.10 or newer; found: $($PY --version 2>&1)."
+  echo "On Raspberry Pi OS that means Debian 12 'Bookworm' or newer, or see docs/Getting-Started.md for a newer Python on an older system."
   exit 1
 fi
 if [ "$(getconf LONG_BIT 2>/dev/null)" = "32" ]; then
@@ -20,7 +22,7 @@ if [ "$(getconf LONG_BIT 2>/dev/null)" = "32" ]; then
 fi
 
 echo "Installing into $PREFIX ..."
-python3 -m venv "$VENV"
+"$PY" -m venv "$VENV"
 "$VENV/bin/pip" install --quiet --upgrade pip
 rm -rf "$SRC/build"
 "$VENV/bin/pip" install --quiet "$SRC"                                   # dependencies
