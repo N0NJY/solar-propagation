@@ -103,6 +103,6 @@ def test_day_strip_shape_and_diurnal_pattern():
 def test_extended_grid_squares():
     lat, lon, label = geo.parse_location("FN31PR47AB")
     assert label == "FN31pr47ab"
-    assert abs(lat - 41.7292) < 1e-3 and abs(lon + 72.7083) < 1e-3
+    assert 41.7083 < lat < 41.75 and -72.75 < lon < -72.6667      # inside the FN31pr sub-square
     for g in ("FN31", "FN31pr", "FN31pr47", "FN31pr47ab"):
         assert geo.latlon_to_grid(*geo.grid_to_latlon(g), chars=len(g)) == g

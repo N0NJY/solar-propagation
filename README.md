@@ -36,6 +36,11 @@ Layout: `hfprop/` is the dependency-free engine (propagation model, NOAA/PSK dat
 `hfprop_app/` is the Flet UI. Developer env vars: `HFPROP_TAB` (start tab 0-4), `HFPROP_CALL`,
 `HFPROP_DATA` (cache dir). See [PLAN.md](PLAN.md) for the roadmap (Android build works; see the Developer Guide).
 
+## License
+
+MIT, see [LICENSE](LICENSE). Third-party licences and data credits are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Space weather data courtesy of NOAA SWPC; real reports from PSK Reporter. Not affiliated with or endorsed by either.
+
 Documentation (wiki-ready pages) is in [docs/](docs/Home.md). Third-party licences: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 Map data: Natural Earth (public domain).

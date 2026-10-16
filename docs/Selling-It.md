@@ -1,5 +1,8 @@
 # Selling It
 
+> **Status: on hold.** The project is released under the **MIT licence** as open source, and selling it is not
+> planned for now. This page is kept for reference if that changes. Under MIT, anyone (including you) may sell copies.
+
 This page collects what it takes to sell HF Propagation: the licences it depends on, the terms of the data
 services, what the app stores need, and a checklist. It is a practical guide and not legal advice. Before
 charging money, have a lawyer or an accountant look at the licence, the privacy policy and your business setup.
@@ -10,8 +13,8 @@ Yes, nothing in the tools it is built on stops you.
 
 * **Flet** (the app framework) is Apache 2.0, **Flutter** is BSD, **Python** is PSF. All allow commercial software.
   Keep the notices in `THIRD_PARTY_NOTICES.md` with the app.
-* **The code is yours.** There is currently **no LICENSE file in the repository**, so by default all rights are reserved
-  to you. That is the right starting point for selling it. Decide the licence deliberately (section 4).
+* **The licence is MIT** (see `LICENSE`). Anyone may use, modify, redistribute and even sell the software, provided the
+  copyright and licence notice stay with it. If you ever wanted to sell it exclusively, that would need a different licence.
 * **Map data** is Natural Earth, public domain, so there is nothing to pay or credit.
 
 ## 2. The data services (the real risk)
@@ -45,7 +48,7 @@ Reporter once and serves everybody from its cache. That also lets you change the
 
 | Decision | Options | Notes |
 |---|---|---|
-| **Licence** | Keep it proprietary (all rights reserved) with a short end-user licence, or open the source and sell the convenience (store builds, support) | Ham radio users expect free tools, and open source builds trust. Proprietary protects the code but invites comparisons with free apps |
+| **Licence** | **Decided: MIT, open source.** | Ham radio users expect free tools, and open source builds trust |
 | **Price model** | One-time purchase, free with a paid unlock (maps, 24-hour outlook, Stations), tip or donation, or free base plus paid support | There are no server costs, so a subscription is hard to justify and users dislike it |
 | **Where to sell** | Google Play (one-time developer fee), Amazon Appstore, direct download with a payment service for Windows, Mac and Linux, Microsoft Store (small one-time fee), Apple App Store (yearly fee) | Check current fees. Start with one channel |
 | **Who sells** | You as an individual, or a business entity | Taxes and liability differ. Ask an accountant |

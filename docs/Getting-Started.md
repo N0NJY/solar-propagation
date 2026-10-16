@@ -33,7 +33,7 @@ nothing, check that setting first.
 ## First run
 
 1. Type your location in the box on the **Home** page and press **Go**:
-   * a US **zip code**, for example `28461`
+   * a US **zip code**, for example `06111`
    * a **grid square**, from 4 to 10 characters, for example `FN31`, `FN31pr`, or `FN31pr47ab`
    * **latitude,longitude**, for example `41.71,-72.73`
 2. Or press **Find me (approximate)**. It looks up your city from your internet address, which is

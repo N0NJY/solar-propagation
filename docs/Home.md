@@ -15,7 +15,7 @@ map, and who has really been heard on the air.
 | [Data Sources and Privacy](Data-Sources-and-Privacy.md) | Where the data comes from and what leaves your device |
 | [Troubleshooting](Troubleshooting.md) | Common problems and fixes |
 | [Developer Guide](Developer-Guide.md) | Code layout, running, testing, building for Linux and Android |
-| [Selling It](Selling-It.md) | Licensing, data terms, store requirements and a launch checklist |
+| [Selling It](Selling-It.md) | On hold. Licensing, data terms, store requirements and a launch checklist, kept for reference |
 
 ## At a glance
 
@@ -28,3 +28,7 @@ map, and who has really been heard on the air.
 
 > Predictions are an empirical estimate for planning. They are not a guarantee and not a
 > substitute for tools such as VOACAP.
+
+## Licence
+
+MIT. See the `LICENSE` file. Free to use, change and share.
