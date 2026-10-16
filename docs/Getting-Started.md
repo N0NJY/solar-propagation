@@ -33,9 +33,9 @@ It works on a Raspberry Pi 3, 4 or 5 only if the operating system is **64-bit**.
     cd solar-propagation
     packaging/install.sh
 
-**If Python is older** (Raspberry Pi OS Bullseye has 3.9), either install the current 64-bit Raspberry Pi OS with Raspberry
-Pi Imager (the cleanest fix), or keep your system and add a newer Python next to it with the `uv` tool, without touching
-the system Python:
+**If Python is older** (Raspberry Pi OS Bullseye has 3.9), keep your system and add a newer Python next to it with the
+`uv` tool, without touching the system Python. This is the route that was tested, on 64-bit Raspberry Pi OS Bullseye.
+(Installing the current 64-bit Raspberry Pi OS with Raspberry Pi Imager is the other option if you can reflash the card.)
 
     sudo apt install git python3-venv libgtk-3-0 curl
     curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -46,7 +46,7 @@ the system Python:
 
 Then start it from the menu ("HF Propagation") or run `~/.local/bin/hfprop-app`. The first start downloads the window
 runtime, so the Pi needs internet. If it complains about a missing library, install the package it names. The installer
-stops with a clear message if it finds an old Python or a 32-bit system. It has been confirmed working on a 64-bit Raspberry Pi. If you hit a problem on yours, please report it at
+stops with a clear message if it finds an old Python or a 32-bit system. It has been confirmed working on a 64-bit Raspberry Pi running Debian 11 "Bullseye" with Python 3.12 from `uv`. If you hit a problem on yours, please report it at
 https://github.com/N0NJY/solar-propagation/issues.
 
 ## Android
