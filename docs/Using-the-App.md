@@ -69,6 +69,6 @@ Defaults work. Change them only if you want to.
 | Transmit power | Watts. Your station, so a QRP station gets honest answers |
 | Antenna | A rough gain figure from compromise (-6 dBi) to large beam (+11 dBi) |
 | Noise level | Quiet / rural, Residential, City / noisy. Sets the receive noise floor |
-| Callsign | Lets the Map and Stations pages show real PSK Reporter stations |
+| Callsign | Starts as `NOCALL`, which means none. Enter yours to show real PSK Reporter stations on the Map and Stations pages. Clear it to go back to `NOCALL` |
 
 All of it is stored on your device.

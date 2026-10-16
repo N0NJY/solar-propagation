@@ -5,6 +5,7 @@ import time
 import flet as ft
 
 from hfprop import psk, units
+from hfprop.settings import NO_CALL
 
 WINDOWS = [(1800, "30 min"), (3600, "1 hour"), (10800, "3 hours"), (21600, "6 hours"), (86400, "24 hours")]
 C_ME, C_THEM, C_BOTH = "#1b6fd8", "#8e44c8", "#0a9e96"
@@ -59,13 +60,13 @@ class Heard:
 
     def stations(self, band):
         s = self.get_s()
-        if not self.enabled or not s.callsign:
+        if not self.enabled or not s.has_callsign:
             return []
         return psk.stations(self._rows_for(band), s.lat, s.lon)
 
     async def refresh(self, force=False):
         s = self.get_s()
-        if not s.callsign or self.busy:
+        if not s.has_callsign or self.busy:
             self.render()
             return
         self.busy = True
@@ -79,7 +80,7 @@ class Heard:
         self.redraw()
 
     async def maybe_refresh(self):
-        if self.enabled and self.get_s().callsign and (self.age is None or self.age > psk.TTL):
+        if self.enabled and self.get_s().has_callsign and (self.age is None or self.age > psk.TTL):
             await self.refresh()
 
     async def _manual_refresh(self, e):
@@ -87,7 +88,7 @@ class Heard:
 
     async def _save_call(self, e):
         s = self.get_s()
-        s.callsign = self.call_field.value.strip().upper()
+        s.callsign = self.call_field.value.strip().upper() or NO_CALL
         self.save(s)
         self.rows, self.age = [], None
         await self.refresh()
@@ -115,9 +116,9 @@ class Heard:
         if not self.enabled:
             return
         band = st.get("band")
-        self.call_box.visible = not s.callsign
-        self.filters.visible = bool(s.callsign)
-        if not s.callsign:
+        self.call_box.visible = not s.has_callsign
+        self.filters.visible = s.has_callsign
+        if not s.has_callsign:
             self.status.value = "Enter your callsign to see real stations that heard you, and stations you heard."
             self.summary.value = ""
             self.check.controls, self.listing.controls = [], []

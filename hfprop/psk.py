@@ -92,6 +92,8 @@ def fetch(callsign):
 def get_spots(callsign, offline=False, force=False):
     """-> (rows, age_seconds | None, error | None). Cached per callsign for TTL seconds."""
     call = callsign.strip().upper()
+    if call in ("", "NOCALL"):                      # placeholder: never query PSK Reporter for it
+        return [], None, None
     if not call:
         return [], None, None
     path = cache_path("psk_" + re.sub(r"\W", "_", call) + ".json")

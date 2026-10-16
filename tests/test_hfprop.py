@@ -106,3 +106,18 @@ def test_extended_grid_squares():
     assert 41.7083 < lat < 41.75 and -72.75 < lon < -72.6667      # inside the FN31pr sub-square
     for g in ("FN31", "FN31pr", "FN31pr47", "FN31pr47ab"):
         assert geo.latlon_to_grid(*geo.grid_to_latlon(g), chars=len(g)) == g
+
+
+def test_default_callsign_is_a_placeholder(tmp_path, monkeypatch):
+    from hfprop import psk, settings
+    monkeypatch.setenv("HFPROP_DATA", str(tmp_path))
+    s = settings.load()
+    assert s.callsign == "NOCALL" and not s.has_callsign and not s.has_location
+    s.callsign = " w1aw "
+    assert s.has_callsign
+    settings.save(s)
+    assert settings.load().callsign == "W1AW"
+    s.callsign = ""                                   # blanked: back to the placeholder
+    settings.save(s)
+    assert settings.load().callsign == "NOCALL"
+    assert psk.get_spots("NOCALL") == ([], None, None) and psk.get_spots("")[0] == []

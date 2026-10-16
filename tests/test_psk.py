@@ -4,10 +4,10 @@ from hfprop import predict, psk, spaceweather
 
 XML = """<?xml version="1.0"?>
 <receptionReports currentSeconds="1792079500">
-  <receptionReport receiverCallsign="K1RA" receiverLocator="FM18cr50" senderCallsign="N0NJY" senderLocator="FN31PR47AB" frequency="10130648" flowStartSeconds="1792079100" mode="JS8" isSender="1" isReceiver="0" sNR="-16"/>
-  <receptionReport receiverCallsign="N0NJY" receiverLocator="FN31PR" senderCallsign="G4ABC" senderLocator="IO91" frequency="14074000" flowStartSeconds="1792079000" mode="FT8" isSender="0" isReceiver="1" sNR="-12"/>
-  <receptionReport receiverCallsign="X1X" receiverLocator="" senderCallsign="N0NJY" senderLocator="FN31" frequency="14074000" flowStartSeconds="1792079000" mode="FT8" isSender="1" sNR="-3"/>
-  <receptionReport receiverCallsign="Y2Y" receiverLocator="JN58" senderCallsign="N0NJY" senderLocator="FN31" frequency="3000000" flowStartSeconds="1792079000" mode="FT8" isSender="1" sNR="-3"/>
+  <receptionReport receiverCallsign="K1RA" receiverLocator="FM18cr50" senderCallsign="N0CALL" senderLocator="FN31PR47AB" frequency="10130648" flowStartSeconds="1792079100" mode="JS8" isSender="1" isReceiver="0" sNR="-16"/>
+  <receptionReport receiverCallsign="N0CALL" receiverLocator="FN31PR" senderCallsign="G4ABC" senderLocator="IO91" frequency="14074000" flowStartSeconds="1792079000" mode="FT8" isSender="0" isReceiver="1" sNR="-12"/>
+  <receptionReport receiverCallsign="X1X" receiverLocator="" senderCallsign="N0CALL" senderLocator="FN31" frequency="14074000" flowStartSeconds="1792079000" mode="FT8" isSender="1" sNR="-3"/>
+  <receptionReport receiverCallsign="Y2Y" receiverLocator="JN58" senderCallsign="N0CALL" senderLocator="FN31" frequency="3000000" flowStartSeconds="1792079000" mode="FT8" isSender="1" sNR="-3"/>
   <activeCallsign callsign="WD0BGZ" reports="1"/>
 </receptionReports>"""
 ME = (41.7, -72.7)

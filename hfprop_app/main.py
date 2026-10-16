@@ -213,7 +213,7 @@ async def main(page: ft.Page):
         if heard.enabled:
             page.run_task(heard.maybe_refresh)
 
-    heard.enabled = mapview.show_heard = bool(s.callsign)
+    heard.enabled = mapview.show_heard = s.has_callsign
     detail_opts = [("borders", "Countries"), ("states", "States / provinces"),
                    ("cities", "Cities"), ("grid", "Grid squares")]
     detail_row = ft.Row(wrap=True, spacing=6, run_spacing=4)
@@ -234,7 +234,7 @@ async def main(page: ft.Page):
         page.update()
 
     apply_detail()
-    layers = ft.SegmentedButton(selected=["places", "heat"] + (["heard"] if s.callsign else []),
+    layers = ft.SegmentedButton(selected=["places", "heat"] + (["heard"] if s.has_callsign else []),
                                 allow_multiple_selection=True,
                                 allow_empty_selection=True, on_change=layers_change,
                                 segments=[ft.Segment(value="places", label=ft.Text("Places")),
@@ -394,12 +394,12 @@ async def main(page: ft.Page):
     power = ft.TextField(label="Transmit power (watts)", value=f"{s.power_w:g}", width=220,
                          on_blur=apply_set, on_submit=apply_set)
     async def save_call(e):
-        s.callsign = call.value.strip().upper()
+        s.callsign = call.value.strip().upper() or cfg.NO_CALL
         call.value = s.callsign
         cfg.save(s)
-        heard.call_field.value = s.callsign
+        heard.call_field.value = s.callsign if s.has_callsign else ""
         heard.rows, heard.age = [], None
-        if s.callsign and not heard.enabled:
+        if s.has_callsign and not heard.enabled:
             heard.enabled = mapview.show_heard = True
             layers.selected = sorted(set(layers.selected) | {"heard"})
         await heard.refresh()
@@ -476,12 +476,12 @@ async def main(page: ft.Page):
     if not s.has_location:
         err.value = "Welcome! Enter a zip code, grid square, or lat,lon above, or press Find me."
         err.color = ft.Colors.BLUE_GREY
-    heard.call_field.value = s.callsign
+    heard.call_field.value = s.callsign if s.has_callsign else ""
     if start == 3:
         await swx_maybe()
     if s.has_location:
         await recompute()
-    if heard.enabled and s.callsign:
+    if heard.enabled and s.has_callsign:
         await heard.refresh()
     async def ticker():
         """Keep 'now' fresh while the app stays open."""
@@ -490,7 +490,7 @@ async def main(page: ft.Page):
             try:
                 if s.has_location:
                     await recompute()
-                if heard.enabled and s.callsign:
+                if heard.enabled and s.has_callsign:
                     await heard.maybe_refresh()
             except Exception:
                 return                              # window closed
