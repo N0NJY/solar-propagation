@@ -46,8 +46,8 @@ the system Python:
 
 Then start it from the menu ("HF Propagation") or run `~/.local/bin/hfprop-app`. The first start downloads the window
 runtime, so the Pi needs internet. If it complains about a missing library, install the package it names. The installer
-stops with a clear message if it finds an old Python or a 32-bit system. This route has not been tested on a Pi yet, so
-please report what happens at https://github.com/N0NJY/solar-propagation/issues.
+stops with a clear message if it finds an old Python or a 32-bit system. It has been confirmed working on a 64-bit Raspberry Pi. If you hit a problem on yours, please report it at
+https://github.com/N0NJY/solar-propagation/issues.
 
 ## Android
 
