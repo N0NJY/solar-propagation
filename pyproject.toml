@@ -8,7 +8,10 @@ version = "0.1.0"
 description = "HF / ionospheric propagation prediction and space weather for hams and SWLs"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["flet>=1.0,<2", "flet-desktop>=1.0,<2"]
+dependencies = ["flet>=1.0,<2"]
+
+[project.optional-dependencies]
+desktop = ["flet-desktop>=1.0,<2"]       # window runtime for Linux / Windows / macOS (not for Android)
 
 [project.scripts]
 hfprop = "hfprop.cli:main"
@@ -19,3 +22,11 @@ packages = ["hfprop", "hfprop_app"]
 
 [tool.setuptools.package-data]
 hfprop = ["data/*.json"]
+
+[tool.flet]
+product = "HF Propagation"
+org = "com.n0njy"
+copyright = "HF Propagation"
+
+[tool.flet.app]
+exclude = ["tests", "packaging", "tools", "PLAN.md", "README.md", ".git", ".github"]

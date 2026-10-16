@@ -188,17 +188,19 @@ async def main(page: ft.Page):
 
     mapview = MapView(on_pick=pick_target, on_pick_station=heard.pick)
 
-    def fit_map(e=None):
-        """Size the 2:1 map to fit the window (the page does not scroll)."""
-        w, h = page.width or 1000, page.height or 700
-        mapview.control.width = max(300, min(w - 32, 2 * (h - 300)))
-        mapview.control.height = mapview.control.width / 2
-        try:
-            page.update()
-        except Exception:
-            pass
+    def fit_map(e):
+        """Size the 2:1 map to the space actually left for it (the page does not scroll)."""
+        w, h = e.width, e.height
+        if not (w and h and 0 < w < 1e5 and 0 < h < 1e5):
+            return
+        width = max(200.0, min(w, 2 * h))
+        if abs(mapview.control.width - width) > 1:
+            mapview.control.width = width
+            mapview.control.height = width / 2
+            mapview.control.update()
 
-    page.on_resize = fit_map
+    map_slot = ft.Container(expand=True, alignment=ft.Alignment.TOP_CENTER, content=mapview.control,
+                            on_size_change=fit_map)
 
     def layers_change(e):
         sel = set(e.control.selected)
@@ -442,10 +444,9 @@ async def main(page: ft.Page):
 
     stations_btn = ft.FilledTonalButton("Stations heard", icon=ft.Icons.LIST, on_click=show_stations)
     # the map page does not scroll, so the mouse wheel is free to zoom the map
-    map_view = ft.Column(spacing=10, controls=[
+    map_view = ft.Column(spacing=10, expand=True, controls=[
         band_chips, ft.Row([map_when, layers, stations_btn], alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                           wrap=True), detail_row, ft.Row([mapview.control], alignment=ft.MainAxisAlignment.CENTER),
-        target_title, target_row])
+                           wrap=True), detail_row, map_slot, target_title, target_row])
     stations_view = ft.Column(scroll=ft.ScrollMode.AUTO, spacing=10, controls=[
         ft.Row([ft.TextButton("Back to map", icon=ft.Icons.ARROW_BACK, on_click=back_to_map),
                 ft.Text("Tap a station to highlight it on the map.", size=12, opacity=0.65)]),
@@ -472,7 +473,6 @@ async def main(page: ft.Page):
         ft.NavigationBarDestination(icon=ft.Icons.TUNE, label="Settings")])
     page.add(ft.SafeArea(expand=True, content=body))
 
-    fit_map()
     if not s.has_location:
         err.value = "Welcome! Enter a zip code, grid square, or lat,lon above, or press Find me."
         err.color = ft.Colors.BLUE_GREY
