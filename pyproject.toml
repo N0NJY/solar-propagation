@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hfprop"
-version = "0.1.0"
+version = "1.0.0"
 description = "HF / ionospheric propagation prediction and space weather for hams and SWLs"
 readme = "README.md"
 license = "MIT"

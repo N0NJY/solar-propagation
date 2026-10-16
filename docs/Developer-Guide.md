@@ -59,6 +59,24 @@ Build settings live in `pyproject.toml` under `[tool.flet]`. The app id is `com.
 `flet-desktop` is an optional extra (`.[desktop]`) and must not be bundled into the phone build.
 For a smaller file, add `--split-per-abi`.
 
+## Making a release
+
+1. Bump `version` in `pyproject.toml`, and use a higher `--build-number` than the last release. Android only
+   installs an update whose version code is higher (the first release was build number 1, version code 2001).
+2. Build the signed APKs. The signing key lives **outside the repository** in `~/.hfprop-signing/` (a keystore and an
+   `env.sh` with its passwords, both readable only by you). **Back both up somewhere safe. If the key is lost, nobody can
+   update the app, and users would have to uninstall and reinstall.** Never commit them.
+
+       set -a; . ~/.hfprop-signing/env.sh; set +a
+       export ANDROID_HOME=$HOME/Android/Sdk
+       flet build apk --split-per-abi --build-number N
+
+   This makes `build/apk/hfprop-arm64-v8a.apk`, `hfprop-armeabi-v7a.apk` and `hfprop-x86_64.apk`.
+3. Check the signature (`apksigner verify --print-certs`), install on a real device, and run through every page.
+4. Rename the files `hfprop-VERSION-ABI.apk`, write a `SHA256SUMS` file, tag the commit `vVERSION`, and create the GitHub
+   release with `gh release create vVERSION ... --notes-file ...`.
+5. Update the version in the download links in `docs/Install-on-Android.md`.
+
 ## Design notes worth knowing
 
 * **Display cost is per shape, not per point.** The map merges every layer into a single path (and dots into one

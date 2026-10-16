@@ -17,18 +17,11 @@ Remove it with `packaging/uninstall.sh`. Your settings in `~/.cache/hfprop` are 
 
 ## Android
 
-The app is not in an app store yet. To put it on a tablet or phone yourself:
+Download the app file from the releases page and tap it. No computer is needed. Follow the step-by-step guide:
+**[Install on Android](Install-on-Android.md)**, or go straight to
+https://github.com/N0NJY/solar-propagation/releases/latest
 
-1. On the device, turn on **Developer options** (Settings, About, tap *Build number* 7 times),
-   then turn on **USB debugging**.
-2. Connect it by USB and accept the "Allow USB debugging?" prompt.
-3. On the computer, build and install (see the [Developer Guide](Developer-Guide.md)):
-
-       flet build apk
-       adb install -r build/apk/hfprop.apk
-
-Samsung tablets sometimes turn USB debugging off again after a reconnect. If `adb devices` shows
-nothing, check that setting first.
+Developers who want to build it from the source can use `flet build apk`; see the [Developer Guide](Developer-Guide.md).
 
 ## First run
 

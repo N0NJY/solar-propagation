@@ -1,6 +1,7 @@
 **HF Propagation**
 
 * [Home](Home.md)
+* [Install on Android](Install-on-Android.md)
 * [Getting Started](Getting-Started.md)
 * [Using the App](Using-the-App.md)
 * [How the Predictions Work](How-the-Predictions-Work.md)

@@ -4,6 +4,14 @@ HF / ionospheric propagation prediction and live space weather for ham radio ope
 Enter a zip code, grid square, or lat/long (or press *Find me*) and see what you can reach, right now
 and over the next 24 hours.
 
+## Download
+
+* **Android (phone or tablet):** download the app from the
+  [latest release](https://github.com/N0NJY/solar-propagation/releases/latest) and tap it. Step-by-step guide:
+  [Install on Android](docs/Install-on-Android.md). Most devices want the `arm64-v8a` file.
+* **Linux:** see [Install (Linux)](#install-linux) below.
+* Windows and macOS: planned, not available yet.
+
 * **Home** - alert banner (flares / storms), bands open right now, next openings, solar flux / Kp / X-ray.
 * **Bands** - 24-hour outlook grid and a GO / MARGINAL / NO-GO card per band (160m-6m) listing reachable regions.
 * **Map** - zoomable (wheel / drag / pinch / buttons) day/night world map with selectable detail

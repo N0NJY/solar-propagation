@@ -9,13 +9,19 @@ map, and who has really been heard on the air.
 
 | Page | What it covers |
 |---|---|
-| [Getting Started](Getting-Started.md) | Install on Linux or Android and set your location |
+| [Install on Android](Install-on-Android.md) | Download the app and install it on a phone or tablet, step by step |
+| [Getting Started](Getting-Started.md) | Install on Linux (or Android) and set your location |
 | [Using the App](Using-the-App.md) | A tour of every screen: Home, Bands, Map, Stations, Space Wx, Settings |
 | [How the Predictions Work](How-the-Predictions-Work.md) | The model in plain language, and what it can and cannot tell you |
 | [Data Sources and Privacy](Data-Sources-and-Privacy.md) | Where the data comes from and what leaves your device |
 | [Troubleshooting](Troubleshooting.md) | Common problems and fixes |
 | [Developer Guide](Developer-Guide.md) | Code layout, running, testing, building for Linux and Android |
 | [Selling It](Selling-It.md) | On hold. Licensing, data terms, store requirements and a launch checklist, kept for reference |
+
+## Download
+
+* **Android:** https://github.com/N0NJY/solar-propagation/releases/latest (guide: [Install on Android](Install-on-Android.md))
+* **Linux:** see [Getting Started](Getting-Started.md)
 
 ## At a glance
 
