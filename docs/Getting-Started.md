@@ -15,19 +15,27 @@ Command-line version, no window: `hfprop FN31` (also accepts a zip code or `lat,
 
 Remove it with `packaging/uninstall.sh`. Your settings in `~/.cache/hfprop` are kept.
 
-### Raspberry Pi (64-bit)
+### Raspberry Pi (64-bit OS only)
 
-The same installer should work on a Raspberry Pi 3, 4 or 5 running **64-bit** Raspberry Pi OS (Debian 12 "Bookworm"
-or newer). Check with `uname -m`: it must say `aarch64`. The 32-bit version of the OS (`armv7l`) is not supported by
-the Flet window runtime.
+It works on a Raspberry Pi 3, 4 or 5 only if the operating system is **64-bit** and recent. Two checks first, because
+`uname -m` alone is not enough (a 32-bit Pi OS on a 64-bit kernel also says `aarch64`):
 
+    dpkg --print-architecture      # must say arm64   (armhf means 32-bit: not supported)
+    python3 --version              # must be 3.10 or newer (Debian 12 "Bookworm" has 3.11)
+    cat /etc/os-release | head -2  # Debian 12 or newer
+
+If either check fails, install the current **64-bit Raspberry Pi OS** (Raspberry Pi Imager, choose "Raspberry Pi OS (64-bit)").
+The installer also stops with a clear message if it finds an old Python or a 32-bit system. When the checks pass:
+
+    sudo apt update
     sudo apt install git python3-venv libgtk-3-0
     git clone https://github.com/N0NJY/solar-propagation.git
     cd solar-propagation
     packaging/install.sh
 
-If it complains about a missing library when it starts, install the package it names. This route has not been tested
-on a Pi yet, so please report what happens at https://github.com/N0NJY/solar-propagation/issues.
+If it complains about a missing library when it starts, install the package it names. Only the Pi's browser-free
+command-line version (`hfprop FN31`) works on older systems, because that part needs nothing but Python 3.10.
+This route has not been tested on a Pi yet, so please report what happens at https://github.com/N0NJY/solar-propagation/issues.
 
 ## Android
 

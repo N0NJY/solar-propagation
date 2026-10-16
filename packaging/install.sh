@@ -7,6 +7,18 @@ PREFIX="${HFPROP_PREFIX:-$HOME/.local}"
 SRC="$(cd "$(dirname "$0")/.." && pwd)"
 VENV="$PREFIX/share/hfprop/venv"
 
+# Friendly checks before installing (the window toolkit needs Python 3.10+ and, on ARM, a 64-bit system)
+if ! python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)' 2>/dev/null; then
+  echo "This needs Python 3.10 or newer; found: $(python3 --version 2>&1)."
+  echo "On Raspberry Pi OS that means Debian 12 'Bookworm' or newer."
+  exit 1
+fi
+if [ "$(getconf LONG_BIT 2>/dev/null)" = "32" ]; then
+  echo "This is a 32-bit system (even if 'uname -m' says aarch64, the programs installed are 32-bit)."
+  echo "The window toolkit has no 32-bit Linux build. On a Raspberry Pi, install the 64-bit Raspberry Pi OS."
+  exit 1
+fi
+
 echo "Installing into $PREFIX ..."
 python3 -m venv "$VENV"
 "$VENV/bin/pip" install --quiet --upgrade pip
