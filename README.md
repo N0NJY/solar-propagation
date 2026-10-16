@@ -34,6 +34,8 @@ The first launch downloads the Flet window runtime, so it needs internet once.
 
 Layout: `hfprop/` is the dependency-free engine (propagation model, NOAA/PSK data, geometry);
 `hfprop_app/` is the Flet UI. Developer env vars: `HFPROP_TAB` (start tab 0-4), `HFPROP_CALL`,
-`HFPROP_DATA` (cache dir). See [PLAN.md](PLAN.md) for the roadmap (Android is next).
+`HFPROP_DATA` (cache dir). See [PLAN.md](PLAN.md) for the roadmap (Android build works; see the Developer Guide).
+
+Documentation (wiki-ready pages) is in [docs/](docs/Home.md). Third-party licences: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 Map data: Natural Earth (public domain).
