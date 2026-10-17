@@ -84,6 +84,9 @@ macOS machines. Run it from the repository's **Actions** tab (*Build Windows and
 `v1.0.0` to attach the zip files to that release, or leave it empty to keep them as downloadable artifacts. The builds are
 unsigned, and the macOS one is Apple Silicon only. Both are untested on real hardware.
 
+The workflow sets `PYTHONUTF8` and `FLET_CLI_NO_RICH_OUTPUT`. Without them the Windows build sometimes failed at the "Flutter installed" step with a
+`UnicodeEncodeError` (the build tool's emoji crashed the Windows log writer). If you see that error, a re-run also usually works.
+
 ## Design notes worth knowing
 
 * **Display cost is per shape, not per point.** The map merges every layer into a single path (and dots into one
