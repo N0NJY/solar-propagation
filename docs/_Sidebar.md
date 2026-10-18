@@ -2,6 +2,7 @@
 
 * [Home](Home.md)
 * [Install on Android](Install-on-Android.md)
+* [Install on Windows](Install-on-Windows.md)
 * [Getting Started](Getting-Started.md)
 * [Using the App](Using-the-App.md)
 * [How the Predictions Work](How-the-Predictions-Work.md)

@@ -11,7 +11,7 @@ dependency-free engine (`hfprop/`) so it runs anywhere. Open source under the MI
 | Android | Released (signed APKs on GitHub Releases, tested on a Samsung tablet) |
 | Linux | Works (per-user installer). Tested on x86-64 |
 | Raspberry Pi | Works on 64-bit Raspberry Pi OS, including Bullseye with Python 3.12 from `uv` |
-| Windows | Builds on GitHub Actions. **Untested** on real hardware |
+| Windows | Released as a zip on GitHub Releases (built on GitHub Actions). Tested on one laptop; PSK stations not yet checked |
 | macOS | Builds on GitHub Actions (Apple Silicon, unsigned). **Untested** on real hardware |
 
 Features: Home (alerts, bands open now, next openings), Bands (24-hour outlook, per-band cards), Map (zoom/pan/pinch,
@@ -20,7 +20,7 @@ flares, Kp, CMEs, alerts), Settings (units, mode, power, antenna, noise, callsig
 
 ## Next
 
-- [ ] Test the Windows build on a real PC, then attach it to a release with an install page
+- [x] Windows build tested on a real PC and released. Still to check: station reports on Windows, and a code-signing certificate to avoid the SmartScreen warning
 - [ ] Test the macOS build (needs a Mac user); consider an Intel build and signing
 - [ ] Validate and tune the model against PSK Reporter data (see below)
 - [ ] App icon and store listing if it is ever put on Google Play

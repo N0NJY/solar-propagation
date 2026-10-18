@@ -22,7 +22,8 @@ map, and who has really been heard on the air.
 
 * **Android:** https://github.com/N0NJY/solar-propagation/releases/latest (guide: [Install on Android](Install-on-Android.md))
 * **Linux and Raspberry Pi:** see [Getting Started](Getting-Started.md)
-* **Windows and macOS:** untested, see [Getting Started](Getting-Started.md)
+* **Windows:** [Install on Windows](Install-on-Windows.md) (tested on one laptop)
+* **macOS:** untested, see [Getting Started](Getting-Started.md)
 
 ## At a glance
 
@@ -30,7 +31,7 @@ map, and who has really been heard on the air.
 * **GO / MARGINAL / NO-GO** for each band from 160 m to 6 m, to each region of the world.
 * **Live space weather** from NOAA: solar flux, Kp, X-ray flares, solar wind, alerts.
 * **Real reports** from PSK Reporter: who heard you and whom you heard, compared with the prediction.
-* **Runs on** Android and Linux (including a 64-bit Raspberry Pi). Windows and macOS builds exist but are untested.
+* **Runs on** Android and Linux (including a 64-bit Raspberry Pi). Windows works (lightly tested). A macOS build exists but is untested.
 * **Python** throughout, with the [Flet](https://flet.dev) toolkit for the screens.
 
 > Predictions are an empirical estimate for planning. They are not a guarantee and not a

@@ -10,8 +10,8 @@ and over the next 24 hours.
 |---|---|---|
 | **Android** (phone or tablet) | Released | Get the file from the [latest release](https://github.com/N0NJY/solar-propagation/releases/latest) and tap it. Step by step: [Install on Android](docs/Install-on-Android.md). Most devices want the `arm64-v8a` file |
 | **Linux** (also Raspberry Pi, 64-bit) | Works | [Install on Linux](#install-linux) below |
-| **Windows** | Builds, **untested** | See [Getting Started](docs/Getting-Started.md#windows-and-macos-untested) |
-| **macOS** | Builds, **untested** | See [Getting Started](docs/Getting-Started.md#windows-and-macos-untested) |
+| **Windows** (64-bit) | Works, lightly tested | Get the zip from the [latest release](https://github.com/N0NJY/solar-propagation/releases/latest). Step by step: [Install on Windows](docs/Install-on-Windows.md) |
+| **macOS** | Builds, **untested** | See [Getting Started](docs/Getting-Started.md#macos-untested) |
 
 ## What it does
 
