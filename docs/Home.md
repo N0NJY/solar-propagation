@@ -39,7 +39,8 @@ map, and who has really been heard on the air.
 ## Contact and news
 
 * Email: [n0njy.software@gmail.com](mailto:n0njy.software@gmail.com)
-* Write-ups and updates: [PrepperComm on Substack](https://preppercomm.substack.com)
+* Write-up: [Propagation program for your tablet](https://preppercomm.substack.com/p/propagation-program-for-your-tablet)
+* More from the author: [PrepperComm on Substack](https://preppercomm.substack.com)
 * Bugs and ideas: [GitHub issues](https://github.com/N0NJY/solar-propagation/issues)
 
 ## Licence
