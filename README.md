@@ -57,6 +57,12 @@ Layout: `hfprop/` is the dependency-free engine (propagation model, NOAA/PSK dat
 `hfprop_app/` is the Flet UI. Developer env vars: `HFPROP_TAB` (start tab 0-4), `HFPROP_CALL`,
 `HFPROP_DATA` (cache dir). See the [Developer Guide](docs/Developer-Guide.md) and the roadmap in [PLAN.md](PLAN.md).
 
+## Contact and news
+
+* Email: [n0njy.software@gmail.com](mailto:n0njy.software@gmail.com)
+* Write-ups and updates: [PrepperComm on Substack](https://preppercomm.substack.com)
+* Bugs and ideas: [GitHub issues](https://github.com/N0NJY/solar-propagation/issues)
+
 ## License
 
 MIT, see [LICENSE](LICENSE). Third-party licences and data credits are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

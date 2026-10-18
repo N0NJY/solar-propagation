@@ -36,6 +36,12 @@ map, and who has really been heard on the air.
 > Predictions are an empirical estimate for planning. They are not a guarantee and not a
 > substitute for tools such as VOACAP.
 
+## Contact and news
+
+* Email: [n0njy.software@gmail.com](mailto:n0njy.software@gmail.com)
+* Write-ups and updates: [PrepperComm on Substack](https://preppercomm.substack.com)
+* Bugs and ideas: [GitHub issues](https://github.com/N0NJY/solar-propagation/issues)
+
 ## Licence
 
 MIT. See the `LICENSE` file. Free to use, change and share.
