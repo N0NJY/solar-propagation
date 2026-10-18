@@ -4,7 +4,7 @@ You do not need an installer, an account, or administrator rights. You download 
 
 **Needs:** a 64-bit Windows PC and an internet connection (it fetches live space weather).
 
-**Status:** tested on one recent Windows laptop. The app, map, Space Wx, location entry and settings all worked. Station reports
+**Status:** tested on one Windows 11 laptop. The app, map, Space Wx, location entry and settings all worked. Station reports
 (PSK Reporter) have not been checked on Windows yet. Please report what you find at https://github.com/N0NJY/solar-propagation/issues.
 
 ## Step 1: Download

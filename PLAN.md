@@ -11,7 +11,7 @@ dependency-free engine (`hfprop/`) so it runs anywhere. Open source under the MI
 | Android | Released (signed APKs on GitHub Releases, tested on a Samsung tablet) |
 | Linux | Works (per-user installer). Tested on x86-64 |
 | Raspberry Pi | Works on 64-bit Raspberry Pi OS, including Bullseye with Python 3.12 from `uv` |
-| Windows | Released as a zip on GitHub Releases (built on GitHub Actions). Tested on one laptop; PSK stations not yet checked |
+| Windows | Released as a zip on GitHub Releases (built on GitHub Actions). Tested on one Windows 11 laptop; PSK stations not yet checked |
 | macOS | Builds on GitHub Actions (Apple Silicon, unsigned). **Untested** on real hardware |
 
 Features: Home (alerts, bands open now, next openings), Bands (24-hour outlook, per-band cards), Map (zoom/pan/pinch,

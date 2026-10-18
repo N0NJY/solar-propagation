@@ -82,7 +82,7 @@ For a smaller file, add `--split-per-abi`.
 These cannot be built on Linux. The workflow `.github/workflows/build-desktop.yml` builds them on GitHub's own Windows and
 macOS machines. Run it from the repository's **Actions** tab (*Build Windows and macOS apps*, then *Run workflow*). Enter a release tag such as
 `v1.0.0` to attach the zip files to that release, or leave it empty to keep them as downloadable artifacts. The builds are
-unsigned, and the macOS one is Apple Silicon only. The Windows build has been tested on one laptop; the macOS one is untested.
+unsigned, and the macOS one is Apple Silicon only. The Windows build has been tested on one Windows 11 laptop; the macOS one is untested.
 
 The workflow sets `PYTHONUTF8` and `FLET_CLI_NO_RICH_OUTPUT`. Without them the Windows build sometimes failed at the "Flutter installed" step with a
 `UnicodeEncodeError` (the build tool's emoji crashed the Windows log writer). If you see that error, a re-run also usually works.
